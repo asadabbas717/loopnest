@@ -1,0 +1,13 @@
+# Reporting and moderation
+
+Participants can report another participant's message in an accepted conversation, including after blocking. Reports are limited to ten new reports per account per day; duplicate submissions return the existing report. The confirmation explains that the selected message and attached photo are shared with authorized moderators. No full conversation history or reporter identity is returned by the review queue.
+
+Moderator privileges live in a private server table. The mobile app cannot assign roles or bypass the server checks. A trusted operator can grant or revoke a role using `public.set_moderator(target, enabled)` through a privileged server connection or the project SQL editor. Never put privileged credentials in the app, repository, or chat. Assign only a verified operator account and revoke access when no longer needed.
+
+The queue exposes at most fifty open reports. A moderator can dismiss, resolve, or suspend the sender. Reported-photo access ends when no open report references it. Ordinary chat authorization does not change for moderators. Suspension blocks chat, uploads, invitations and private downloads, including requests made with an existing access token. Suspended users can still request password-reauthenticated account erasure. Moderator accounts require operator review rather than peer suspension.
+
+Decisions are recorded in a private audit table without copying message content. Reports reference existing messages and are deleted when those messages/accounts are erased; audit references become null when their subjects are deleted. This is not a legal evidence preservation system. Downloaded content cannot be recalled. An operator must establish an appeal contact, audited restoration procedure, moderator staffing, and a retention schedule before public launch. No response-time promise or automated content screening is provided.
+
+## Verification
+
+The migration chain and report input checks pass locally. The real integration suite exercises outsider/own-message denial, duplicate reports, role-escalation denial, minimum review scope, reported-photo access and revocation, and suspension against an existing session. A successful real-backend run must be recorded in `STATUS.md` before this phase is marked complete.

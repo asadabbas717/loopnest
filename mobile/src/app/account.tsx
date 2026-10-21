@@ -4,17 +4,30 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSession } from '../providers/Session';
 import { backend } from '../lib/client';
 import { deleteAccount } from '../lib/api';
+import { createModerationApi } from '../lib/moderation-api';
 import { Button, Field, Heading, Loading, Notice, Page, styles, useAction } from '../components/ui';
 
 export default function Account() {
   const { session, loading, refresh, accountState } = useSession();
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
+  const [moderator, setModerator] = useState(false);
   const { busy, error, run } = useAction();
   useFocusEffect(
     useCallback(() => {
+      let active = true;
       if (!loading && !session) router.replace('/');
+      if (session)
+        createModerationApi(backend)
+          .isModerator()
+          .then((value) => {
+            if (active) setModerator(value);
+          })
+          .catch(() => {
+            if (active) setModerator(false);
+          });
       return () => {
+        active = false;
         setPassword('');
         setConfirmation('');
       };
@@ -29,6 +42,13 @@ export default function Account() {
   return (
     <Page>
       <Heading title="Account and privacy" subtitle={session.user.email} />
+      {moderator && (
+        <Button
+          title="Review reported messages"
+          secondary
+          onPress={() => router.push('/moderation')}
+        />
+      )}
       <Text style={[styles.copy, { marginBottom: 20 }]}>
         Chats are access-controlled, not end-to-end encrypted. Recipients can save copies. No
         advertising or analytics SDKs are included.

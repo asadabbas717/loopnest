@@ -1,9 +1,9 @@
 import { backend } from './client';
 import { createChatApi } from './chat-api';
 export type { Profile, Conversation, Message } from './chat-api';
-export async function accountState(): Promise<'active' | 'erasing'> {
+export async function accountState(): Promise<'active' | 'erasing' | 'suspended'> {
   const { data, error } = await backend().rpc('account_state');
-  if (error || (data !== 'active' && data !== 'erasing'))
+  if (error || (data !== 'active' && data !== 'erasing' && data !== 'suspended'))
     throw error ?? new Error('Account unavailable.');
   return data;
 }

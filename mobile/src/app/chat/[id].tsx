@@ -253,6 +253,16 @@ export default function Chat() {
                   </Text>
                 )}
                 {message.photo_id && <PrivatePhoto id={message.photo_id} />}
+                {message.sender_id !== actor && (
+                  <Button
+                    title="Report message"
+                    secondary
+                    disabled={busy}
+                    onPress={() =>
+                      router.push({ pathname: '/report/[id]', params: { id: message.id } })
+                    }
+                  />
+                )}
                 <Text style={{ color: '#536D67', fontSize: 12 }}>
                   {new Date(message.created_at).toLocaleString()}
                 </Text>

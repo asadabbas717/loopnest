@@ -9,7 +9,7 @@ const Context = createContext<{
   profile: Profile | null;
   loading: boolean;
   failed: boolean;
-  accountState: 'active' | 'erasing';
+  accountState: 'active' | 'erasing' | 'suspended';
   refresh: () => void;
 }>({
   session: null,
@@ -26,7 +26,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     revision: number;
     profile: Profile | null;
     failed: boolean;
-    state: 'active' | 'erasing';
+    state: 'active' | 'erasing' | 'suspended';
   } | null>(null);
   const [booting, setBooting] = useState(!!client);
   const [failed, setFailed] = useState(false);

@@ -26,6 +26,8 @@ Completed the local backend configuration and pinned CLI tooling, email-code tem
 
 The local Windows Docker engine still fails on a locked startup socket; no system data was reset. The integration suite ran on isolated Linux containers and verifies synthetic accounts, not real-user/device or hosted-production behavior. Dependency findings are reviewed in `DEPENDENCIES.md` (24 remaining, including unresolved runtime URI-decoding risk). See `PHASE_4.md` for evidence and reproducible commands. Next work is account recovery, account/media erasure, abuse reporting/moderation, and native security validation before any public release.
 
+Later environment update: Docker became accessible after the owner's update. The local development stack now starts without resetting existing Docker data. The earlier socket failure describes the phase 4 environment only.
+
 ## Phase 5 — email-code account recovery
 
 Added password recovery with a separate non-persistent Supabase client, delivered email codes, a password-reset screen, single-use code checks, and global refresh-session sign-out after changing a password. Recovery verification never signs the main app into chat. If sign-out fails after a password change, retrying completion does not repeat that change. Existing access JWTs may remain valid until their expiry; global sign-out is not a promise of immediate revocation of all cached access tokens.
@@ -37,3 +39,9 @@ Typing, lint and 17 local regression/Postgres/configuration tests pass. Recovery
 Implemented a password-reauthenticated, server-side account erasure function, frozen-account state, restrictive policies, upload/freeze serialization, physical Storage removal before Auth deletion, and a native confirmation/retry screen. Peer-owned media in conversations removed by account deletion is included in cleanup. The client cannot choose a deletion target, use privileged database functions or hold the service key. Failures leave a frozen, retryable account rather than reporting false success.
 
 Typing, lint and 21 local tests pass, including the full migration chain and failed-media cleanup cases. Real Edge Runtime/Storage/Auth erasure and the full backend suite passed in [CI run 39649023485](https://github.com/asadabbas717/loopnest/actions/runs/39649023485), source commit `a70a387`. Phase 6 is complete. See `ACCOUNT_ERASURE.md` for behavior, retention boundaries and deployment steps.
+
+## Phase 7 — scoped reporting and moderation (verification pending)
+
+Implemented rate-limited message reports, explicitly disclosed sharing of selected content, a restricted review queue, server-assigned moderator roles, decision audit records and immediate database-enforced account suspension. Reported-photo access ends after resolution; moderators do not gain ordinary access to unrelated conversations. Suspended accounts retain the account-erasure path. See `MODERATION.md` for operator responsibilities and limits.
+
+Strict typing, lint and 22 local tests pass, including all three migrations. Real Supabase integration verification is pending; this phase is not yet marked complete. The owner selected a dedicated Supabase Free HTTPS project for phone testing; no hosted credentials or deployment have been configured yet.

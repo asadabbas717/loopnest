@@ -84,6 +84,16 @@ export default function Home() {
       </Page>
     );
   if (!session) return <Auth />;
+  if (accountState === 'suspended')
+    return (
+      <Page>
+        <Heading
+          title="Account suspended"
+          subtitle="Messaging and photo access are disabled. Contact the project maintainer privately to request a review."
+        />
+        <Button title="Account and privacy" onPress={() => router.push('/account')} />
+      </Page>
+    );
   if (accountState === 'erasing')
     return (
       <Page>

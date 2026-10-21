@@ -6,6 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { createClient } from '@supabase/supabase-js';
 import { createChatApi } from '../src/lib/chat-api.ts';
 import { createRecoveryApi } from '../src/lib/recovery-api.ts';
+import { createModerationApi } from '../src/lib/moderation-api.ts';
 import { messageChannel } from '../src/lib/message-channel.ts';
 import { localStatus } from '../scripts/backend.mjs';
 
@@ -116,6 +117,8 @@ test(
       );
       let photoId;
       let path;
+      let reportedMessageId;
+      let laterReport;
       const jpeg = readFileSync(new URL('./fixtures/pixel.jpg', import.meta.url));
       let peerPhotoPath;
       await t.test(
@@ -153,7 +156,8 @@ test(
           const pending = await bob.client.storage.from('chat-photos').download(path);
           assert.ok(pending.error, 'unattached photo inaccessible to recipient');
           await assert.rejects(bob.api.send(cid, randomUUID(), 'stolen photo', bob.id, photoId));
-          await alice.api.send(cid, randomUUID(), 'A private photo', alice.id, photoId);
+          reportedMessageId = randomUUID();
+          await alice.api.send(cid, reportedMessageId, 'A private photo', alice.id, photoId);
           const received = await bob.client.storage.from('chat-photos').download(path);
           ok(received.error, 'accepted recipient can download attached photo');
           assert.ok(
@@ -276,6 +280,56 @@ test(
           await eve.client.removeChannel(eveChannel);
         },
       );
+      await t.test(
+        'reports are scoped, idempotent and expose only selected content to authorized moderators',
+        async () => {
+          const reporter = createModerationApi(() => bob.client);
+          const outsider = createModerationApi(() => eve.client);
+          const reportId = await reporter.report(reportedMessageId, 'harassment');
+          assert.equal(await reporter.report(reportedMessageId, 'harassment'), reportId);
+          await assert.rejects(outsider.report(reportedMessageId, 'spam'));
+          await assert.rejects(
+            createModerationApi(() => alice.client).report(reportedMessageId, 'other'),
+          );
+          await assert.rejects(reporter.queue());
+          assert.ok(
+            (await bob.client.rpc('set_moderator', { target: bob.id, enabled: true })).error,
+            'users cannot elevate themselves',
+          );
+          assert.equal(
+            (await alice.client.from('reports').select('id')).data.length,
+            0,
+            'sender cannot see reporter records',
+          );
+          ok(
+            (await admin.rpc('set_moderator', { target: eve.id, enabled: true })).error,
+            'operator grants moderator role',
+          );
+          assert.equal(await outsider.isModerator(), true);
+          const queue = await outsider.queue();
+          assert.equal(queue.length, 1);
+          assert.equal(queue[0].id, reportId);
+          assert.equal(queue[0].body, 'A private photo');
+          assert.equal('reporter_id' in queue[0], false, 'review queue omits reporter identity');
+          assert.equal(
+            (await eve.api.messages(cid)).length,
+            0,
+            'moderator cannot browse unrelated chat history',
+          );
+          ok(
+            (await eve.client.storage.from('chat-photos').download(path)).error,
+            'reported media available for review',
+          );
+          await outsider.resolve(reportId, 'resolve');
+          assert.equal((await outsider.queue()).length, 0);
+          assert.ok(
+            (await eve.client.storage.from('chat-photos').download(path)).error,
+            'review permission ends after resolution',
+          );
+          const text = (await bob.api.messages(cid)).find((item) => item.body === 'retry test');
+          laterReport = await reporter.report(text.id, 'spam');
+        },
+      );
       await t.test('blocking revokes API access and prevents new messages/photos', async () => {
         await bob.api.blockUser(bob.id, alice.id);
         assert.equal((await alice.api.messages(cid)).length, 0);
@@ -326,6 +380,21 @@ test(
             (await main.auth.signInWithPassword({ email: eve.email, password: replacement })).error,
             'new password works',
           );
+        },
+      );
+      await t.test(
+        'moderator suspension is enforced against existing JWTs without exposing admin powers',
+        async () => {
+          await createModerationApi(() => eve.client).resolve(laterReport, 'suspend');
+          const state = await alice.client.rpc('account_state');
+          ok(state.error, 'account status query succeeds');
+          assert.equal(state.data, 'suspended');
+          assert.ok(
+            (await alice.client.storage.from('chat-photos').download(path)).error,
+            'suspended owner cannot download',
+          );
+          await assert.rejects(alice.api.invite(eve.handle));
+          await assert.rejects(createModerationApi(() => alice.client).queue());
         },
       );
       await t.test(
