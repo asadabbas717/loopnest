@@ -43,3 +43,7 @@ token_refresh = 60
 [auth.email.template.confirmation]
 subject = "Your Loopnest verification code"
 content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Your Loopnest recovery code"
+content_path = "./supabase/templates/recovery.html"

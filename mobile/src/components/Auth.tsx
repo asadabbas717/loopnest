@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Text } from 'react-native';
 import { backend } from '../lib/client';
 import { credentials } from '../domain/validation';
+import { Recovery } from './Recovery';
 import { Button, Field, Heading, Notice, Page, styles, useAction } from './ui';
 
 export function Auth() {
@@ -10,7 +11,9 @@ export function Auth() {
   const [password, setPassword] = useState('');
   const [verification, setVerification] = useState(false);
   const [code, setCode] = useState('');
+  const [recovering, setRecovering] = useState(false);
   const { busy, error, run } = useAction();
+  if (recovering) return <Recovery onClose={() => setRecovering(false)} />;
   return (
     <Page>
       <Heading
@@ -87,6 +90,17 @@ export function Auth() {
         </>
       )}
       <Notice text={error} />
+      {!register && !verification && (
+        <Button
+          title="Forgot your password?"
+          secondary
+          disabled={busy}
+          onPress={() => {
+            setPassword('');
+            setRecovering(true);
+          }}
+        />
+      )}
       <Button
         title={
           verification

@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createClient } from '@supabase/supabase-js';
 import { createChatApi } from '../src/lib/chat-api.ts';
+import { createRecoveryApi } from '../src/lib/recovery-api.ts';
 import { messageChannel } from '../src/lib/message-channel.ts';
 import { localStatus } from '../scripts/backend.mjs';
 
@@ -35,13 +36,15 @@ test(
     const password = `Test-${randomUUID()}!`;
     const ok = (error, stage) => assert.ok(!error, stage); // Never log session/credential responses.
     const actors = {};
-    async function emailCode(email) {
+    async function emailCode(email, subject) {
       for (let i = 0; i < 40; i++) {
         const response = await fetch('http://127.0.0.1:54324/api/v1/messages');
         if (!response.ok) throw new Error('Local Mailpit inbox is unavailable.');
         const result = await response.json();
-        const mail = result.messages?.find((item) =>
-          item.To?.some((recipient) => recipient.Address === email),
+        const mail = result.messages?.find(
+          (item) =>
+            item.To?.some((recipient) => recipient.Address === email) &&
+            (!subject || item.Subject === subject),
         );
         if (mail) {
           const body = await fetch(
@@ -280,6 +283,37 @@ test(
         assert.equal(login.data.user.id, eve.id);
         await assert.rejects(bob.api.send(cid, randomUUID(), 'previous account', bob.id));
       });
+      await t.test(
+        'recovery uses delivered single-use codes without signing in the main app',
+        async () => {
+          const main = make();
+          const isolated = make();
+          const recovery = createRecoveryApi(isolated);
+          await assert.rejects(recovery.complete('not-yet-verified-password'));
+          await recovery.request(eve.email);
+          await assert.rejects(recovery.verify(eve.email, '000000'));
+          const code = await emailCode(eve.email, 'Your Loopnest recovery code');
+          await recovery.verify(eve.email, code);
+          assert.equal((await main.auth.getSession()).data.session, null);
+          const reused = await make().auth.verifyOtp({
+            email: eve.email,
+            token: code,
+            type: 'recovery',
+          });
+          assert.ok(reused.error, 'used recovery code is rejected');
+          const replacement = `New-${randomUUID()}!`;
+          await recovery.complete(replacement);
+          assert.equal((await isolated.auth.getSession()).data.session, null);
+          assert.ok(
+            (await main.auth.signInWithPassword({ email: eve.email, password })).error,
+            'old password rejected',
+          );
+          ok(
+            (await main.auth.signInWithPassword({ email: eve.email, password: replacement })).error,
+            'new password works',
+          );
+        },
+      );
     } finally {
       for (const client of clients) await client.removeAllChannels();
       // Delete physical objects through Storage before deleting synthetic test accounts.
