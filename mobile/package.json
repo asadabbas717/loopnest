@@ -5,7 +5,9 @@
   "license": "MIT",
   "type": "module",
   "main": "expo-router/entry",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -18,10 +20,17 @@
     "format:check": "prettier --check src tests app.config.ts eslint.config.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "expo": "~57.0.26",
     "expo-constants": "~57.0.20",
+    "expo-crypto": "~57.0.4",
+    "expo-file-system": "~57.0.7",
+    "expo-image": "~57.0.5",
+    "expo-image-manipulator": "~57.0.21",
+    "expo-image-picker": "~57.0.20",
     "expo-linking": "~57.0.11",
     "expo-router": "~57.0.24",
+    "expo-secure-store": "~57.0.4",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-native": "0.86.3",
@@ -29,6 +38,7 @@
     "react-native-screens": "~4.26.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "@types/node": "^26.6.4",
     "@types/react": "~19.2.2",
     "eslint": "^9.39.5",

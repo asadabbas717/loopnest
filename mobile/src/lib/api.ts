@@ -1,0 +1,93 @@
+import { backend } from './client';
+import { displayName, messageText, username, uuid } from '../domain/validation';
+
+export type Profile = { id: string; username: string; display_name: string };
+export type Conversation = {
+  id: string;
+  initiator: string;
+  recipient: string;
+  status: 'pending' | 'accepted' | 'declined';
+  created_at: string;
+};
+export type Message = {
+  id: string;
+  sender_id: string;
+  body: string;
+  photo_id: string | null;
+  created_at: string;
+};
+export async function ownProfile(id: string): Promise<Profile | null> {
+  const { data, error } = await backend()
+    .from('profiles')
+    .select('id,username,display_name')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function saveProfile(id: string, handle: string, name: string) {
+  const { error } = await backend()
+    .from('profiles')
+    .insert({ id, username: username(handle), display_name: displayName(name) });
+  if (error) throw error;
+}
+export async function conversations(): Promise<Conversation[]> {
+  const { data, error } = await backend()
+    .from('conversations')
+    .select('id,initiator,recipient,status,created_at')
+    .neq('status', 'declined')
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data;
+}
+export async function conversation(id: string): Promise<Conversation | null> {
+  const { data, error } = await backend()
+    .from('conversations')
+    .select('id,initiator,recipient,status,created_at')
+    .eq('id', uuid(id))
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function peerProfile(id: string): Promise<Profile | null> {
+  return ownProfile(id);
+}
+export async function invite(handle: string): Promise<string> {
+  const { data, error } = await backend().rpc('invite', { recipient_username: username(handle) });
+  if (error) throw error;
+  return data as string;
+}
+export async function respond(id: string, accept: boolean) {
+  const { error } = await backend().rpc('respond_to_invite', {
+    cid: uuid(id),
+    accept_invite: accept,
+  });
+  if (error) throw error;
+}
+export async function messages(id: string, before?: string): Promise<Message[]> {
+  let query = backend()
+    .from('messages')
+    .select('id,sender_id,body,photo_id,created_at')
+    .eq('conversation_id', uuid(id))
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(40);
+  if (before) query = query.lt('created_at', before);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+export async function send(id: string, messageId: string, text: string, photoId?: string) {
+  const { error } = await backend().rpc('send_message', {
+    cid: uuid(id),
+    message_id: uuid(messageId),
+    content: messageText(text, !!photoId),
+    asset_id: photoId ?? null,
+  });
+  if (error) throw error;
+}
+export async function blockUser(self: string, other: string) {
+  const { error } = await backend().from('blocks').insert({ blocker: self, blocked: other });
+  if (error) throw error;
+}
