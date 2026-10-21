@@ -1,4 +1,3 @@
-# Keep mobile source consistent across Windows and CI.
-mobile/** text=auto eol=lf
-mobile/**/*.png -text
-.github/**/*.yml text eol=lf
+* text=auto eol=lf
+*.png -text
+*.jpg -text

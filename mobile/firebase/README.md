@@ -1,3 +1,0 @@
-Place the iOS Firebase client file `GoogleService-Info.plist` here after registering `com.example.socialconnect` as an iOS app in the existing Firebase project. The file is ignored by Git. Never put service-account credentials in this folder or mobile builds.
-
-Android development currently uses the existing `../app/google-services.json`; override paths with `FIREBASE_ANDROID_CONFIG` and `FIREBASE_IOS_CONFIG` when building against a dedicated test project. EAS builds need client files available in their build context, typically through EAS file environment variables. These build-time variables are not runtime secrets.
