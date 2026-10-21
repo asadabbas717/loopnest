@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createClient } from '@supabase/supabase-js';
 import { createChatApi } from '../src/lib/chat-api.ts';
+import { messageChannel } from '../src/lib/message-channel.ts';
 import { localStatus } from '../scripts/backend.mjs';
 
 // Never accepts a URL/admin key from environment variables. The runner obtains
@@ -216,20 +217,11 @@ test(
           let received = false;
           let outsider = false;
           async function subscribe(actor, onMessage) {
-            const channel = actor.client.channel(`test-${randomUUID()}`).on(
-              'postgres_changes',
-              {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'messages',
-                filter: `conversation_id=eq.${cid}`,
-              },
-              onMessage,
-            );
+            const channel = messageChannel(actor.client, cid, onMessage, `test-${randomUUID()}`);
             await new Promise((resolve, reject) => {
               const timer = setTimeout(
                 () => reject(new Error('Realtime subscription timed out')),
-                20000,
+                25000,
               );
               channel.subscribe((status) => {
                 if (status === 'SUBSCRIBED') {

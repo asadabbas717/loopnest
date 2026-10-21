@@ -16,18 +16,33 @@ export function localCli(args) {
       output += data;
     });
     // CLI status/start can print local keys; never forward raw output to logs.
-    process.stderr.resume();
+    let diagnostic = '';
+    process.stderr.on('data', (data) => {
+      diagnostic = (diagnostic + data).slice(-8000);
+    });
     process.on('error', reject);
     process.on('close', (code) =>
       code === 0
         ? resolve(output)
         : reject(
             new Error(
-              `Local Supabase command failed (exit ${code}). Check Docker and run the CLI manually for diagnostics.`,
+              `Local Supabase command failed (exit ${code}). ${failureCode(diagnostic)} Check Docker and run the CLI manually for diagnostics.`,
             ),
           ),
     );
   });
+}
+function failureCode(output) {
+  for (const line of output.split('\n').reverse()) {
+    try {
+      const value = JSON.parse(line);
+      const code = value?.error?.code;
+      if (typeof code === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(code)) return `Code: ${code}.`;
+    } catch {
+      /* Never expose raw CLI output or credentials. */
+    }
+  }
+  return '';
 }
 export async function localStatus() {
   const status = JSON.parse(await localCli(['status', '-o', 'json']));

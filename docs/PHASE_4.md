@@ -16,3 +16,5 @@ The integration suite covers Auth/email verification, API outsider denial and in
 ## Dependency review
 
 The current install reports 24 advisories (18 high, 6 moderate). Investigate compatible patches and upstream fixed ranges; do not force npm's obsolete framework downgrades. Findings in development tooling do not automatically establish native runtime exploitability, but unresolved reachable vulnerabilities block release. No finding is waived simply because lint or bundle export passes.
+
+See `DEPENDENCIES.md` for inspected dependency paths, fixed-version/module-compatibility constraints, upstream advisory links and release decisions.

@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { randomUUID } from 'expo-crypto';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { backend } from '../../lib/client';
+import { messageChannel } from '../../lib/message-channel';
 import {
   blockUser,
   conversation,
@@ -134,24 +135,12 @@ export default function Chat() {
           });
       }, 300);
     };
-    const channel = backend()
-      .channel(`conversation-${id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${id}`,
-        },
-        refresh,
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') refresh();
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          if (active) setLoadError('Live updates disconnected. Refresh to reconnect.');
-        }
-      });
+    const channel = messageChannel(backend(), id, refresh).subscribe((status) => {
+      if (status === 'SUBSCRIBED') refresh();
+      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        if (active) setLoadError('Live updates disconnected. Refresh to reconnect.');
+      }
+    });
     return () => {
       active = false;
       if (refreshTimer) clearTimeout(refreshTimer);
