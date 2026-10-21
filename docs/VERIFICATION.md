@@ -1,5 +1,7 @@
 # Verification and release gates
 
+For current phase/device evidence, read `STATUS.md`. The phase-4 snapshot below is historical: Docker was subsequently repaired and then stopped at the owner's request, hosted test configuration and Android acceptance have progressed, and the current audit count is 21 affected packages (18 high, 3 moderate). Native preview protection introduced after an observed recent-apps leak still needs device acceptance. Passing CI does not establish OS screenshot, autofill or IME behavior.
+
 ## Phase-4 update
 
 The real-service boundary is now tested in isolated Linux Docker CI: [run 39642114879](https://github.com/asadabbas717/loopnest/actions/runs/39642114879), source commit `401d830`. All 15 local unit/Postgres/configuration checks and all 8 reported integration tests pass, together with typing, lint, formatting and platform exports. The integration suite uses the same API/channel modules as the app and covers real email verification, signed JWT sessions/refresh, private storage size/MIME/authenticated download rules, outsider/block denial, duplicate retries, account changes, live recipient-only delivery and resubscription catch-up. A detected replication-readiness race was fixed and verified by that rerun.

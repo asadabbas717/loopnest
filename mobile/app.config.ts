@@ -19,6 +19,8 @@ const config: ExpoConfig = {
       'android.permission.RECORD_AUDIO',
       'android.permission.CAMERA',
       'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.DETECT_SCREEN_CAPTURE',
       'android.permission.WRITE_EXTERNAL_STORAGE',
     ],
   },
