@@ -10,4 +10,4 @@ Decisions are recorded in a private audit table without copying message content.
 
 ## Verification
 
-The migration chain and report input checks pass locally. The real integration suite exercises outsider/own-message denial, duplicate reports, role-escalation denial, minimum review scope, reported-photo access and revocation, and suspension against an existing session. A successful real-backend run must be recorded in `STATUS.md` before this phase is marked complete.
+The migration chain and report input checks pass locally. The real integration suite exercises outsider/own-message denial, duplicate reports, role-escalation denial, minimum review scope, reported-photo access and revocation, and suspension against an existing session. All 12 real backend tests pass locally and in [CI run 39651009414](https://github.com/asadabbas717/loopnest/actions/runs/39651009414), source commit `4182eb1`. Hosted moderation with appointed human operators still requires acceptance testing.

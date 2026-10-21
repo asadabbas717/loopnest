@@ -40,8 +40,14 @@ Implemented a password-reauthenticated, server-side account erasure function, fr
 
 Typing, lint and 21 local tests pass, including the full migration chain and failed-media cleanup cases. Real Edge Runtime/Storage/Auth erasure and the full backend suite passed in [CI run 39649023485](https://github.com/asadabbas717/loopnest/actions/runs/39649023485), source commit `a70a387`. Phase 6 is complete. See `ACCOUNT_ERASURE.md` for behavior, retention boundaries and deployment steps.
 
-## Phase 7 — scoped reporting and moderation (verification pending)
+## Phase 7 — scoped reporting and moderation
 
 Implemented rate-limited message reports, explicitly disclosed sharing of selected content, a restricted review queue, server-assigned moderator roles, decision audit records and immediate database-enforced account suspension. Reported-photo access ends after resolution; moderators do not gain ordinary access to unrelated conversations. Suspended accounts retain the account-erasure path. See `MODERATION.md` for operator responsibilities and limits.
 
-Strict typing, lint and 22 local tests pass, including all three migrations. Real Supabase integration verification is pending; this phase is not yet marked complete. The owner selected a dedicated Supabase Free HTTPS project for phone testing; no hosted credentials or deployment have been configured yet.
+Strict typing, lint and 22 local tests pass, including all three migrations. The real local Docker suite passes all 12 tests. Both quality/platform exports and real backend integration passed in [CI run 39651009414](https://github.com/asadabbas717/loopnest/actions/runs/39651009414), source commit `4182eb1`. Phase 7 is complete.
+
+## Phase 8 — hosted Free test setup (email dependency pending)
+
+Connected the owner's dedicated Supabase Free test project using existing authorized CLI access. Applied all three migrations, deployed `delete-account`, and enforced email confirmation and a minimum password length of 12. The app's HTTPS URL and public publishable key are saved only in ignored `mobile/.env`. Anonymous hosted requests to profiles, messages and reports are denied; the hosted erasure function rejects requests without a bearer token. No real users or test emails were created by these checks.
+
+Supabase rejected custom confirmation/recovery templates with `ConfigPushAuthUpdateStatusError`: template modification is unavailable on Free with the default email provider. No plan upgrade was attempted. A custom SMTP provider with a free allowance must be configured by the owner, then code templates applied and actual delivery verified. The app currently expects email codes and cannot use the default link emails. Full hosted sign-in/chat/photo and device-security testing remain unverified. Expo remains stopped as requested. No moderator account has been appointed.
