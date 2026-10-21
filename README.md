@@ -2,7 +2,7 @@
 
 An open-source React Native app for invitation-only conversations and private photo sharing. Fresh implementation started October 21, 2026. The previous Android/Firebase app is retained only in Git history and `archive/pre-rebuild-2026-10-21`.
 
-Expo SDK 57, TypeScript, Expo Router, and Supabase Free. Email authentication, accepted invitations, private chat/photos, blocking, and encrypted native session persistence are implemented. No Firebase, required cloud-build subscription, analytics, advertising, public media bucket, or service-role credential in the client. MIT licensed.
+Expo SDK 57, TypeScript, Expo Router, and Supabase Free. Email authentication/recovery, accepted invitations, private chat/photos, Friends with block/unblock controls, account erasure, scoped moderation, and encrypted native session persistence are implemented. Operator-only abandoned-photo maintenance defaults to a read-only preview. No Firebase, required cloud-build subscription, analytics, advertising, public media bucket, or service-role credential in the client. MIT licensed.
 
 This is a development implementation, not a certified or production-ready secure messenger. Conversations are access-controlled, not end-to-end encrypted. See [security model](docs/SECURITY_MODEL.md), [free-tier policy](docs/FREE_TIER.md), [development status](docs/STATUS.md), and [verification/release gates](docs/VERIFICATION.md).
 
@@ -12,7 +12,7 @@ To open the app on a physical phone, install Expo Go, use the same Wi-Fi as the 
 
 Use Node 22.13+ and npm. Follow [backend setup](supabase/README.md), copy `mobile/.env.example` to `mobile/.env`, then from `mobile` run `npm ci`, `npm run check`, and `npm start`. Without configuration, the app shows an honest setup screen. Android/iOS local native builds use `npm run android` / `npm run ios` and require Android SDK/JDK or macOS/Xcode respectively. No paid EAS builds are required. Native platforms only; web persistence is intentionally disabled.
 
-For entirely local backend development, start Docker and run `npm run backend:start`, then `npm run backend:env -- android` (Android emulator) or `npm run backend:env` (iOS Simulator). Run `npm run test:integration` for real-service checks. Local mode is debug-only; no hosted account or billing is needed. See [phase-4 evidence](docs/PHASE_4.md) for the passing CI run and the outstanding Docker startup issue on the original Windows workstation.
+For entirely local backend development, start Docker and run `npm run backend:start`, then `npm run backend:env -- android` (Android emulator) or `npm run backend:env` (iOS Simulator). Run `npm run test:integration` for real-service checks. Local mode is debug-only; no hosted account or billing is needed. Docker is not needed when testing against hosted Supabase. See [development status](docs/STATUS.md) for current backend/device evidence and [photo maintenance](docs/PHOTO_MAINTENANCE.md) for bounded cleanup commands.
 
 ## Contribute
 
