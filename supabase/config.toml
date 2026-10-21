@@ -36,6 +36,10 @@ enable_confirmations = true
 double_confirm_changes = true
 
 [auth.rate_limit]
-email_sent = 2
+email_sent = 30
 sign_in_sign_ups = 10
 token_refresh = 60
+
+[auth.email.template.confirmation]
+subject = "Your Loopnest verification code"
+content_path = "./supabase/templates/confirmation.html"

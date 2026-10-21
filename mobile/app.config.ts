@@ -7,7 +7,11 @@ const config: ExpoConfig = {
   version: '0.1.0',
   orientation: 'portrait',
   platforms: ['android', 'ios'],
-  ios: { bundleIdentifier: 'app.loopnest.mobile', supportsTablet: false },
+  ios: {
+    bundleIdentifier: 'app.loopnest.mobile',
+    supportsTablet: false,
+    infoPlist: { NSAppTransportSecurity: { NSAllowsLocalNetworking: true } },
+  },
   android: {
     package: 'app.loopnest.mobile',
     blockedPermissions: [

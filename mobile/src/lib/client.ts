@@ -3,15 +3,18 @@ import * as SecureStore from 'expo-secure-store';
 import { randomUUID } from 'expo-crypto';
 import { Platform } from 'react-native';
 import { createSessionStorage } from '../domain/secure-storage';
+import { backendConfiguration } from '../domain/backend-config';
 
 export const backendUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 export const publicKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
-// Only new publishable keys are accepted; this excludes secret/service-role JWTs.
 export const configured =
   Platform.OS !== 'web' &&
-  /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(backendUrl) &&
-  /^sb_publishable_[A-Za-z0-9_-]+$/.test(publicKey) &&
-  !publicKey.includes('REPLACE_ME');
+  !!backendConfiguration({
+    url: backendUrl,
+    key: publicKey,
+    development: __DEV__,
+    allowLocal: process.env.EXPO_PUBLIC_USE_LOCAL_BACKEND === 'true',
+  });
 const storage = createSessionStorage(
   {
     getItem: (key) => SecureStore.getItemAsync(key),
