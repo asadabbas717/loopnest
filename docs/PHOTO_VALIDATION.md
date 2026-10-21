@@ -10,6 +10,8 @@ The pinned codec is `jpeg-js@0.4.4`, installed only for server/unit testing and 
 
 The function stores only processed bytes with the service key in server memory and then marks the asset validated. A database trigger prevents attaching a new unvalidated asset to a message. Trusted Storage inserts lock/recheck the conversation and reservation, including account erasure, blocking, expiration and cleanup. Service uploads do not bypass this freeze check. Storage/finalization failure reports failure and leaves only an unattached retry/cleanup candidate, not a successful message. Raw input is not deliberately persisted to a quarantine bucket or logged.
 
+The mobile upload binds to its initiating account, checks that the returned reservation belongs to that account, and passes the captured bearer explicitly to the function. Switching accounts during reservation cannot silently upload old-account bytes into a new-account asset. These checks complement the existing expected-sender guard on message submission.
+
 ## Deployment and compatibility
 
 Deploy `upload-photo`, apply `202610220003_validated_photos.sql`, and reload the updated app before testing new uploads. As with deletion, gateway `verify_jwt=false` delegates validation to the explicit Auth.getUser check inside the handler; it is not anonymous upload access. The service key never reaches the phone. Older clients that upload directly are denied after the migration. Existing messages/photos remain accessible to their authorized participants; they are **legacy uploads**, not retroactively validated or claimed to have server-stripped metadata.

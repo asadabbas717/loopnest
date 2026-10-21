@@ -333,7 +333,8 @@ export default function Chat() {
               run(async () => {
                 if (!attempt.current) attempt.current = { id: randomUUID(), text };
                 const submission = attempt.current;
-                if (photo && !submission.photoId) submission.photoId = await uploadPhoto(id, photo);
+                if (photo && !submission.photoId)
+                  submission.photoId = await uploadPhoto(id, photo, actor!);
                 await send(id, submission.id, submission.text, actor!, submission.photoId);
                 attempt.current = null;
                 setText('');

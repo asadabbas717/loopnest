@@ -128,7 +128,7 @@ test(
       const jpeg = readFileSync(new URL('./fixtures/pixel.jpg', import.meta.url));
       async function validatedAsset(actor) {
         const bytes = jpeg.buffer.slice(jpeg.byteOffset, jpeg.byteOffset + jpeg.byteLength);
-        const id = await createPhotoUploadApi(() => actor.client).upload(cid, bytes);
+        const id = await createPhotoUploadApi(() => actor.client).upload(cid, bytes, actor.id);
         const asset = await admin
           .from('photo_assets')
           .select('id,path,validated_at')

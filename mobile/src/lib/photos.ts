@@ -54,11 +54,11 @@ export function discardPhoto(photo: Photo | null) {
     }
   }
 }
-export async function uploadPhoto(conversationId: string, photo: Photo) {
+export async function uploadPhoto(conversationId: string, photo: Photo, expectedActor: string) {
   const bytes = await new File(photo.uri).arrayBuffer();
   if (bytes.byteLength <= 0 || bytes.byteLength > 1048576)
     throw new Error('Photo size is invalid.');
-  return createPhotoUploadApi(backend).upload(conversationId, bytes);
+  return createPhotoUploadApi(backend).upload(conversationId, bytes, expectedActor);
 }
 export async function photoPath(id: string): Promise<string | null> {
   const { data, error } = await backend()
