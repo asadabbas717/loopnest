@@ -18,7 +18,7 @@ Current hosted setup: the app's ignored local configuration points to the owner'
 
 ## Next device checks
 
-Accepted on the owner's Android device: password Show/Hide, revised keyboard handling, wrong-password deletion denial, correct-password account deletion, rejection of deleted-account sign-in, disappearance of the peer's shared conversation, and sign-out/account switching without cross-account content. Background/app-switcher behavior, offline/reconnect and physical hosted-photo deletion have not been explicitly confirmed. The checklist below includes repeatable regression steps as well as outstanding checks.
+Accepted on the owner's Android device: password Show/Hide, revised keyboard handling, wrong-password deletion denial, correct-password account deletion, rejection of deleted-account sign-in, disappearance of the peer's shared conversation, sign-out/account switching without cross-account content, Friends unblock/navigation and restored chat history. A later screenshot confirms that private content was visible in recent apps; another shows a generic deletion warning. Those two defects and email autofill suffixing are addressed by phase 11 but still require device retesting. Offline/reconnect and physical hosted-photo deletion remain unconfirmed.
 
 After the keyboard follow-up, fully restart Metro with `npm run start:device -- --clear` and reload the project in Expo Go. New keyboard dependencies require a fresh bundle rather than relying on Fast Refresh. SDK 57 Expo Go includes these modules; an existing standalone development build needs rebuilding to include them. The account screen's password and DELETE fields are the primary regression case from the owner's screenshot.
 
@@ -30,7 +30,9 @@ After the keyboard follow-up, fully restart Metro with `npm run start:device -- 
 
 Expo is stopped; restart it explicitly when phone testing is ready. These checks do not replace signed-build and iOS testing.
 
-Background/app-switcher testing is currently deferred by the owner. Next requested-feature checks are Friends navigation, block/unblock, and the specific wrong-password deletion warning. See `FRIENDS_AND_ERRORS.md`; do not repeat destructive deletion with an account you want to keep.
+For phase 11, restart Metro with `npm run start:device -- --clear` and fully reload Loopnest in Expo Go. Test typing, pasting and credential autofill on email fields: no extra character should appear and the app must not silently change a legitimate address. If the keyboard's saved suggestion itself is incorrect, correct that saved entry rather than relying on the app to guess an address. Test a wrong deletion password: the form should remain filled and show the specific warning. Do not submit a correct deletion password with an account you want to keep.
+
+Open a private chat/photo, then immediately open recent apps: the Loopnest preview must not expose either. Repeat from Friends, account settings and moderation if available; test rapid background/foreground and a fresh cold launch. Screenshots/recordings of Loopnest are now intentionally blocked by native screen protection. Any old task snapshot must be replaced by a fresh protected session before judging the fix. Native signed builds must be rebuilt for the new module; SDK 57 Expo Go includes it. No screenshot/detection permission prompt is expected. On iOS, test the native inactive overlay as well; it remains unverified on an actual iPhone. If protection cannot start, the app must show only the privacy error/retry screen, not private content.
 
 ## Connection troubleshooting
 

@@ -36,9 +36,11 @@ export function Recovery({ onClose }: { onClose: () => void }) {
         <>
           <Field
             label="Email"
-            value={email}
+            defaultValue={email}
             onChangeText={setEmail}
             autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
             keyboardType="email-address"
             autoComplete="email"
             editable={!busy}

@@ -25,11 +25,14 @@ export function Auth() {
       </Text>
       <Field
         label="Email"
-        value={email}
+        defaultValue={email}
         onChangeText={setEmail}
         autoCapitalize="none"
+        autoCorrect={false}
+        spellCheck={false}
         keyboardType="email-address"
-        autoComplete="email"
+        autoComplete={register ? 'email' : 'username'}
+        importantForAutofill="yes"
         editable={!busy && !verification}
       />
       {verification ? (

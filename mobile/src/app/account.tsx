@@ -5,6 +5,7 @@ import { useSession } from '../providers/Session';
 import { backend } from '../lib/client';
 import { deleteAccount } from '../lib/api';
 import { createModerationApi } from '../lib/moderation-api';
+import { userErrorMessage, errorMessages } from '../domain/user-errors';
 import { Button, Field, Heading, Loading, Notice, Page, styles, useAction } from '../components/ui';
 
 export default function Account() {
@@ -112,9 +113,13 @@ export default function Account() {
                       const { error: issue } = await backend().auth.signOut({ scope: 'local' });
                       if (issue) throw issue;
                       router.replace('/');
-                    } finally {
-                      refresh();
+                    } catch (issue) {
+                      // A rejected password changes no account state. Preserve
+                      // the form instead of remounting it through profile refresh.
+                      if (userErrorMessage(issue) !== errorMessages.wrong_password) refresh();
+                      throw issue;
                     }
+                    refresh();
                   }),
               },
             ],

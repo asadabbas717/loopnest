@@ -15,6 +15,7 @@ export class UserFacingError extends Error {
   readonly code: UserErrorCode;
   constructor(code: UserErrorCode) {
     super(errorMessages[code]);
+    this.name = 'UserFacingError';
     this.code = code;
   }
 }
@@ -69,10 +70,11 @@ export function userErrorMessage(error: unknown): string {
       : {};
   const code = typeof value.code === 'string' ? value.code : '';
   const message = typeof value.message === 'string' ? value.message : '';
-  if (authMessages[code]) return authMessages[code];
+  if (Object.hasOwn(errorMessages, code)) return errorMessages[code as UserErrorCode];
+  if (Object.hasOwn(authMessages, code)) return authMessages[code]!;
   if (code === '23505')
     return 'This action conflicts with an existing record. Refresh and try again.';
-  if (databaseMessages[message]) return databaseMessages[message];
+  if (Object.hasOwn(databaseMessages, message)) return databaseMessages[message]!;
   if (value.status === 429 || code === '429') return errorMessages.rate_limited;
   if (value.status === 401 || code === 'PGRST301') return errorMessages.auth_required;
   if (value.status === 403 || code === '42501')

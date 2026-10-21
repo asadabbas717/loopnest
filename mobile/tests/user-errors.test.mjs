@@ -70,3 +70,31 @@ test('known Auth, quota and permission failures have accurate safe messages', ()
     'Something went wrong. Try again. If it continues, contact the project maintainer.',
   );
 });
+test('mobile response objects without the global Response prototype or clone still yield the password warning', async () => {
+  let reads = 0;
+  const mobileResponse = {
+    status: 403,
+    json: async () => {
+      reads++;
+      return { code: 'wrong_password' };
+    },
+  };
+  const api = createAccountApi(() => ({
+    functions: {
+      invoke: async () => ({
+        data: null,
+        error: { name: 'FunctionsHttpError', context: mobileResponse },
+      }),
+    },
+  }));
+  await assert.rejects(
+    api.deleteAccount('private-password', 'DELETE'),
+    (issue) => issue.code === 'wrong_password',
+  );
+  assert.equal(reads, 1);
+  assert.match(
+    userErrorMessage({ name: 'UserFacingError', code: 'wrong_password' }),
+    /^Wrong password/,
+  );
+  assert.equal(typeof userErrorMessage({ code: 'constructor' }), 'string');
+});
