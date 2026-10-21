@@ -12,4 +12,4 @@ Local backend start now includes the Edge Runtime. For hosted testing, apply mig
 
 Supabase Free includes an Edge Function invocation allowance; no paid plan is required for this endpoint. Stay within Free and its quotas. Source: https://supabase.com/docs/guides/functions/pricing.
 
-Tests cover current-password enforcement, target-ID injection, body limits, freeze-before-delete ordering, media failure behavior, physical cleanup of both participants' media, Auth deletion and stale-session denial. Full service results must pass before calling the phase verified.
+Tests cover current-password enforcement, target-ID injection, body limits, freeze-before-delete ordering, media failure behavior, physical cleanup of both participants' media, Auth deletion and stale-session denial. The real function and complete backend suite passed in [CI run 39649023485](https://github.com/asadabbas717/loopnest/actions/runs/39649023485), source commit `a70a387`.
