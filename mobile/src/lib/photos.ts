@@ -2,6 +2,7 @@ import { launchImageLibraryAsync } from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { File, Paths } from 'expo-file-system';
 import { backend } from './client';
+import { createPhotoUploadApi } from './photo-upload-api';
 
 export type Photo = { uri: string; size: number };
 export async function choosePhoto(): Promise<Photo | null> {
@@ -54,17 +55,10 @@ export function discardPhoto(photo: Photo | null) {
   }
 }
 export async function uploadPhoto(conversationId: string, photo: Photo) {
-  const { data, error } = await backend().rpc('reserve_photo', { cid: conversationId }).single();
-  if (error) throw error;
-  const asset = data as { id: string; path: string };
   const bytes = await new File(photo.uri).arrayBuffer();
   if (bytes.byteLength <= 0 || bytes.byteLength > 1048576)
     throw new Error('Photo size is invalid.');
-  const { error: uploadError } = await backend()
-    .storage.from('chat-photos')
-    .upload(asset.path, bytes, { contentType: 'image/jpeg', upsert: false, cacheControl: '0' });
-  if (uploadError) throw uploadError;
-  return asset.id;
+  return createPhotoUploadApi(backend).upload(conversationId, bytes);
 }
 export async function photoPath(id: string): Promise<string | null> {
   const { data, error } = await backend()

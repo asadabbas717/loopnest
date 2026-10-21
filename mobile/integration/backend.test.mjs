@@ -13,6 +13,8 @@ import { cleanAbandonedPhotos } from '../scripts/photo-cleanup.mjs';
 import { createFriendsApi } from '../src/lib/friends-api.ts';
 import { createAccountApi } from '../src/lib/account-api.ts';
 import { userErrorMessage } from '../src/domain/user-errors.ts';
+import { createPhotoUploadApi } from '../src/lib/photo-upload-api.ts';
+import jpegCodec from 'jpeg-js';
 
 // Never accepts a URL/admin key from environment variables. The runner obtains
 // ephemeral credentials from the project-local CLI and refuses hosted endpoints.
@@ -124,6 +126,19 @@ test(
       let reportedMessageId;
       let laterReport;
       const jpeg = readFileSync(new URL('./fixtures/pixel.jpg', import.meta.url));
+      async function validatedAsset(actor) {
+        const bytes = jpeg.buffer.slice(jpeg.byteOffset, jpeg.byteOffset + jpeg.byteLength);
+        const id = await createPhotoUploadApi(() => actor.client).upload(cid, bytes);
+        const asset = await admin
+          .from('photo_assets')
+          .select('id,path,validated_at')
+          .eq('id', id)
+          .single();
+        ok(asset.error, 'validated asset lookup');
+        assert.ok(asset.data.validated_at, 'server marks validation only after saving');
+        paths.push(asset.data.path);
+        return asset.data;
+      }
       let peerPhotoPath;
       await t.test(
         'private Storage enforces path ownership, byte/MIME limits and authenticated downloads',
@@ -141,18 +156,44 @@ test(
             .from('chat-photos')
             .upload(path, jpeg, { contentType: 'image/jpeg' });
           assert.ok(stolen.error, 'outsider upload denied');
-          const badType = await alice.client.storage
+          const badType = await admin.storage
             .from('chat-photos')
             .upload(path, jpeg, { contentType: 'text/html' });
           assert.ok(badType.error, 'non-JPEG MIME rejected');
-          const tooBig = await alice.client.storage
+          const tooBig = await admin.storage
             .from('chat-photos')
             .upload(path, Buffer.alloc(1048577), { contentType: 'image/jpeg' });
           assert.ok(tooBig.error, 'over-limit upload rejected');
           const uploaded = await alice.client.storage
             .from('chat-photos')
             .upload(path, jpeg, { contentType: 'image/jpeg', upsert: false });
-          ok(uploaded.error, 'JPEG upload accepted');
+          assert.ok(uploaded.error, 'direct client JPEG upload cannot bypass validation');
+          ok(
+            (await admin.rpc('claim_photo_validation', { asset_id: photoId, actor: alice.id }))
+              .error,
+            'trusted fixture claim',
+          );
+          ok(
+            (
+              await admin.storage
+                .from('chat-photos')
+                .upload(path, jpeg, { contentType: 'image/jpeg', upsert: false })
+            ).error,
+            'trusted unfinished validation fixture',
+          );
+          await assert.rejects(alice.api.send(cid, randomUUID(), 'unvalidated', alice.id, photoId));
+          assert.ok(
+            (
+              await alice.client.rpc('finish_photo_validation', {
+                asset_id: photoId,
+                actor: alice.id,
+              })
+            ).error,
+            'client cannot mark its own upload validated',
+          );
+          const valid = await validatedAsset(alice);
+          photoId = valid.id;
+          path = valid.path;
           const overwrite = await alice.client.storage
             .from('chat-photos')
             .upload(path, jpeg, { contentType: 'image/jpeg', upsert: true });
@@ -164,10 +205,9 @@ test(
           await alice.api.send(cid, reportedMessageId, 'A private photo', alice.id, photoId);
           const received = await bob.client.storage.from('chat-photos').download(path);
           ok(received.error, 'accepted recipient can download attached photo');
-          assert.ok(
-            jpeg.equals(Buffer.from(await received.data.arrayBuffer())),
-            'downloaded bytes match',
-          );
+          const decoded = jpegCodec.decode(Buffer.from(await received.data.arrayBuffer()));
+          assert.equal(decoded.width, 1);
+          assert.equal(decoded.height, 1);
           const outside = await eve.client.storage.from('chat-photos').download(path);
           assert.ok(outside.error, 'outsider cannot download guessed path');
           const publicRead = await fetch(
@@ -180,19 +220,56 @@ test(
             { headers: { apikey: local.key, Authorization: `Bearer ${current.access_token}` } },
           );
           assert.ok(authenticated.ok, 'the mobile authenticated image route works');
-          const peerAsset = await bob.client.rpc('reserve_photo', { cid }).single();
-          ok(peerAsset.error, 'peer photo reservation');
-          peerPhotoPath = peerAsset.data.path;
-          paths.push(peerPhotoPath);
-          ok(
-            (
-              await bob.client.storage
-                .from('chat-photos')
-                .upload(peerPhotoPath, jpeg, { contentType: 'image/jpeg' })
-            ).error,
-            'peer photo upload',
+          const peerAsset = await validatedAsset(bob);
+          peerPhotoPath = peerAsset.path;
+          await bob.api.send(cid, randomUUID(), 'peer-owned photo', bob.id, peerAsset.id);
+        },
+      );
+      await t.test(
+        'trusted upload rejects spoofed JPEGs, oversized requests and reuse of validation claims',
+        async () => {
+          const reserve = async () => {
+            const r = await alice.client.rpc('reserve_photo', { cid }).single();
+            ok(r.error, 'adversarial upload reservation');
+            return r.data;
+          };
+          const invoke = (client, asset, body) =>
+            client.functions.invoke('upload-photo', {
+              headers: { 'Content-Type': 'image/jpeg', 'x-photo-id': asset.id },
+              body,
+            });
+          const asset = await reserve();
+          assert.ok(
+            (await invoke(eve.client, asset, jpeg)).error,
+            'outsider cannot process another reservation',
           );
-          await bob.api.send(cid, randomUUID(), 'peer-owned photo', bob.id, peerAsset.data.id);
+          const invalid = await invoke(
+            alice.client,
+            asset,
+            Buffer.from('<html>not JPEG pixels</html>'),
+          );
+          assert.ok(invalid.error);
+          assert.equal(invalid.response.status, 422);
+          const reused = await invoke(alice.client, asset, jpeg);
+          assert.equal(
+            reused.response.status,
+            403,
+            'a failed validation consumes the one-use claim',
+          );
+          const big = await invoke(alice.client, await reserve(), Buffer.alloc(1048577));
+          assert.equal(big.response.status, 413, 'streaming byte limit enforced on server');
+          const anonymous = await fetch(`${local.url}/functions/v1/upload-photo`, {
+            method: 'POST',
+            headers: { apikey: local.key, 'Content-Type': 'image/jpeg', 'x-photo-id': asset.id },
+            body: jpeg,
+          });
+          assert.equal(anonymous.status, 401);
+          assert.equal(
+            (await admin.from('photo_assets').select('validated_at').eq('id', asset.id).single())
+              .data.validated_at,
+            null,
+            'invalid bytes never marked validated',
+          );
         },
       );
       await t.test(
@@ -297,8 +374,13 @@ test(
           const recent = await reserve();
           paths.push(abandoned.path);
           ok(
+            (await admin.rpc('claim_photo_validation', { asset_id: abandoned.id, actor: alice.id }))
+              .error,
+            'unfinished validation fixture claim',
+          );
+          ok(
             (
-              await alice.client.storage
+              await admin.storage
                 .from('chat-photos')
                 .upload(abandoned.path, jpeg, { contentType: 'image/jpeg' })
             ).error,

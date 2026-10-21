@@ -51,3 +51,7 @@ content_path = "./supabase/templates/recovery.html"
 [functions.delete-account]
 # The handler verifies the bearer with Auth.getUser and reauthenticates the password.
 verify_jwt = false
+
+[functions.upload-photo]
+# Handler explicitly verifies the bearer with Auth.getUser before claiming work.
+verify_jwt = false

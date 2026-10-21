@@ -1,5 +1,9 @@
 // Only approved messages reach the UI; never render arbitrary server diagnostics.
 export const errorMessages = {
+  invalid_photo:
+    'This photo could not be validated. Choose another image no larger than 1 MB after resizing.',
+  photo_unavailable: 'This upload reservation is unavailable. Choose the photo again to retry.',
+  photo_upload_unavailable: 'The photo could not be saved right now. Try again later.',
   username_taken: 'That username is already taken. Choose another username.',
   wrong_password: 'Wrong password. Enter your current password and try again.',
   auth_required: 'Your session has expired. Sign in again.',

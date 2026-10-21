@@ -122,10 +122,36 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
         'arbitrary.jpg',
       ]),
     );
+    await assert.rejects(
+      db.query('insert into storage.objects(bucket_id,name) values($1,$2)', [
+        'chat-photos',
+        asset.path,
+      ]),
+    );
+    await assert.rejects(
+      db.query('select public.claim_photo_validation($1,$2)', [asset.id, alice]),
+      /permission denied/,
+    );
+    await db.exec('reset role');
+    await db.query('update public.photo_assets set validation_attempted_at=now() where id=$1', [
+      asset.id,
+    ]);
     await db.query('insert into storage.objects(bucket_id,name) values($1,$2)', [
       'chat-photos',
       asset.path,
     ]);
+    await as(alice);
+    await assert.rejects(
+      db.query('select public.send_message($1,gen_random_uuid(),$2,$3)', [
+        cid,
+        'unvalidated',
+        asset.id,
+      ]),
+      /Photo unavailable/,
+    );
+    await db.exec('reset role');
+    await db.query('update public.photo_assets set validated_at=now() where id=$1', [asset.id]);
+    await as(alice);
     await db.query('update storage.objects set name=$1', ['overwritten.jpg']);
     assert.equal(
       (await db.query('select name from storage.objects')).rows[0].name,
@@ -175,10 +201,15 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
     const abandoned = (await db.query('select * from public.reserve_photo($1)', [cid])).rows[0];
     const empty = (await db.query('select * from public.reserve_photo($1)', [cid])).rows[0];
     const recent = (await db.query('select * from public.reserve_photo($1)', [cid])).rows[0];
+    await db.exec('reset role');
+    await db.query('update public.photo_assets set validation_attempted_at=now() where id=$1', [
+      abandoned.id,
+    ]);
     await db.query('insert into storage.objects(bucket_id,name) values($1,$2)', [
       'chat-photos',
       abandoned.path,
     ]);
+    await as(alice);
     await assert.rejects(db.query('select public.photo_cleanup_count()'), /permission denied/);
     await as('', 'anon');
     await assert.rejects(db.query('select public.claim_photo_cleanup()'), /permission denied/);
@@ -248,6 +279,19 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
     );
     await assert.rejects(db.query('select public.reserve_photo($1)', [cid]));
     await assert.rejects(db.query("select public.invite('bob')"), /Invitation unavailable/);
+    await db.exec('reset role');
+    await db.query('update public.photo_assets set validation_attempted_at=now() where id=$1', [
+      recent.id,
+    ]);
+    await assert.rejects(
+      db.query('insert into storage.objects(bucket_id,name) values($1,$2)', [
+        'chat-photos',
+        recent.path,
+      ]),
+      /Photo unavailable/,
+      'trusted storage writes also respect a frozen/blocked conversation',
+    );
+    await as(alice);
     // Friends exposes only the caller's own block list, and unblocking cannot
     // override the peer's block or a changed authenticated identity.
     assert.equal(
