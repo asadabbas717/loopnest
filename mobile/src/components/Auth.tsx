@@ -64,6 +64,7 @@ export function Auth() {
       ) : (
         <>
           <Field
+            key={register ? 'new-password' : 'current-password'}
             label={register ? 'Password · at least 12 characters' : 'Password'}
             value={password}
             onChangeText={setPassword}

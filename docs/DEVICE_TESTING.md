@@ -14,7 +14,17 @@ You do **not** need Supabase just to open the app. Without `mobile/.env`, it del
 
 When ready to test live features on multiple phones, use a dedicated Supabase Free project with its HTTPS URL and public publishable key. That works independently of the computer's network address. Never enter a service-role/secret key. Local backend addresses `127.0.0.1` and `10.0.2.2` are for simulators/emulators and do not point to the computer from a physical phone. Do not weaken the backend URL guard to work around this.
 
-Current hosted setup: the app's ignored local configuration points to the owner's Free test project; database migrations and the erasure function are deployed. The owner configured Brevo SMTP and the verification/recovery code templates are applied. Actual inbox delivery remains unverified. Expo is stopped; restart it explicitly when phone testing is ready. Use an email address you control to create a test account, confirm that the code arrives (including checking spam), and verify it in the app. Use only synthetic messages/photos during testing. Do not share passwords or verification codes in issues or chat.
+Current hosted setup: the app's ignored local configuration points to the owner's Free test project; database migrations and the erasure function are deployed. The owner configured Brevo SMTP and the verification/recovery code templates are applied. On October 22, 2026, the owner confirmed two successful registrations, password recovery and sign-in, invitation/acceptance, chat and photo sending on Android Expo Go. Use only synthetic messages/photos during testing. Do not share passwords or verification codes in issues or chat.
+
+## Next device checks
+
+1. Verify Show/Hide on sign-in, signup and recovery without losing typed characters or the cursor. Leaving the password field or backgrounding the app must hide it again. Repeat with a long password and larger system text.
+2. Open each form's bottom field, switch fields while the keyboard remains open, dismiss/reopen the keyboard and scroll to the submit button. Check signup, recovery, profile onboarding, account deletion confirmation (without submitting) and the chat composer.
+3. With two disposable accounts, block the peer and verify neither can send or retrieve more chat/photo content. Report a message before blocking to check submission; moderator review needs an operator-appointed moderator.
+4. Using disposable accounts only, test account deletion with a wrong password (must preserve the account), then the correct password and DELETE confirmation. Confirm the account cannot sign in again and its shared conversation/photos disappear from the peer's app after refresh. Deletion affects both participants' conversation, so never use valuable test content.
+5. Background/reopen, sign out, and switch accounts: no previous account's messages or photos should appear. Repeat offline/reconnect without creating duplicate messages.
+
+Expo is stopped; restart it explicitly when phone testing is ready. These checks do not replace signed-build and iOS testing.
 
 ## Connection troubleshooting
 

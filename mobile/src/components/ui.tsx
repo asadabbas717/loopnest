@@ -1,6 +1,16 @@
-import { useRef, useState, type PropsWithChildren } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type PropsWithChildren,
+} from 'react';
 import {
   ActivityIndicator,
+  AppState,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -21,17 +31,62 @@ export const palette = {
   line: '#D1DFD5',
   danger: '#A32938',
 };
+const FocusedField = createContext<(input: TextInput | null) => void>(() => {});
 export function Page({ children }: PropsWithChildren) {
+  const root = useRef<View>(null);
+  const scroll = useRef<ScrollView>(null);
+  const focused = useRef<TextInput | null>(null);
+  const [top, setTop] = useState(0);
+  const revealField = useCallback(() => {
+    if (focused.current?.isFocused() && Keyboard.isVisible()) {
+      scroll.current?.scrollResponderScrollNativeHandleToKeyboard(focused.current, 24, true);
+    }
+  }, []);
+  const focusField = useCallback(
+    (input: TextInput | null) => {
+      focused.current = input;
+      revealField();
+    },
+    [revealField],
+  );
+  useEffect(() => {
+    let frame: number | undefined;
+    const subscription = Keyboard.addListener('keyboardDidShow', () => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(revealField);
+    });
+    return () => {
+      subscription.remove();
+      if (frame !== undefined) cancelAnimationFrame(frame);
+    };
+  }, [revealField]);
   return (
     <SafeAreaView style={styles.page} edges={['bottom', 'left', 'right']}>
-      <KeyboardAvoidingView
+      <View
+        ref={root}
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        onLayout={() => {
+          root.current?.measureInWindow((_x, y) => setTop(y));
+        }}
       >
-        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-          {children}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={top}
+        >
+          <ScrollView
+            ref={scroll}
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.body}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            onLayout={revealField}
+            onContentSizeChange={revealField}
+          >
+            <FocusedField.Provider value={focusField}>{children}</FocusedField.Provider>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -76,20 +131,65 @@ export function Button({
     </Pressable>
   );
 }
-export function Field({ label, ...props }: TextInputProps & { label: string }) {
+export function Field({
+  label,
+  secureTextEntry = false,
+  ...props
+}: TextInputProps & { label: string }) {
+  const input = useRef<TextInput>(null);
+  const focusField = useContext(FocusedField);
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    if (!secureTextEntry) return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') setRevealed(false);
+    });
+    return () => subscription.remove();
+  }, [secureTextEntry]);
   return (
     <View style={{ gap: 8, marginBottom: 18 }}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        {...props}
-        accessibilityLabel={label}
-        placeholderTextColor={palette.muted}
-        style={[
-          styles.input,
-          props.multiline && { minHeight: 90, textAlignVertical: 'top' },
-          props.style,
-        ]}
-      />
+      <View style={secureTextEntry ? styles.passwordRow : undefined}>
+        <TextInput
+          {...props}
+          ref={input}
+          secureTextEntry={secureTextEntry && !revealed}
+          autoCorrect={secureTextEntry ? false : props.autoCorrect}
+          spellCheck={secureTextEntry ? false : props.spellCheck}
+          onFocus={(event) => {
+            focusField(input.current);
+            props.onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            setRevealed(false);
+            focusField(null);
+            props.onBlur?.(event);
+          }}
+          accessibilityLabel={label}
+          placeholderTextColor={palette.muted}
+          style={[
+            styles.input,
+            secureTextEntry && styles.passwordInput,
+            props.multiline && { minHeight: 90, textAlignVertical: 'top' },
+            props.style,
+          ]}
+        />
+        {secureTextEntry && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
+            accessibilityState={{ disabled: props.editable === false }}
+            disabled={props.editable === false}
+            onPress={() => setRevealed((value) => !value)}
+            style={({ pressed }) => [
+              styles.passwordToggle,
+              (pressed || props.editable === false) && { opacity: 0.6 },
+            ]}
+          >
+            <Text style={styles.passwordToggleText}>{revealed ? 'Hide' : 'Show'}</Text>
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }
@@ -157,6 +257,23 @@ export const styles = StyleSheet.create({
     color: palette.ink,
     fontSize: 16,
   },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: palette.line,
+    backgroundColor: 'white',
+    borderRadius: 14,
+  },
+  passwordInput: { flex: 1, minWidth: 0, borderWidth: 0, backgroundColor: 'transparent' },
+  passwordToggle: {
+    minWidth: 64,
+    minHeight: 52,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  passwordToggleText: { color: palette.accent, fontWeight: '600', fontSize: 15 },
   button: {
     minHeight: 52,
     padding: 15,

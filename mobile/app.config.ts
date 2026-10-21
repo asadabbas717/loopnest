@@ -14,6 +14,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'app.loopnest.mobile',
+    softwareKeyboardLayoutMode: 'resize',
     blockedPermissions: [
       'android.permission.RECORD_AUDIO',
       'android.permission.CAMERA',
