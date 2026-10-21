@@ -61,3 +61,13 @@ Added accessible Show/Hide controls to all password fields (signup/sign-in, reco
 Physical-device acceptance of these two visual fixes is pending. Retest with long passwords, the last field on long forms, larger system text, keyboard dismissal/reopening and switching between fields while the keyboard stays open. Expo remains stopped following the owner's stop request.
 
 Strict typing, Expo lint, formatting, all 22 regression tests and Android/iOS Hermes exports pass for the fixes. The first export was blocked by sandbox temporary-file permissions; rerunning outside that restriction succeeded. The checks do not simulate an Android/iOS keyboard or establish visual acceptance; that requires the device checklist in `DEVICE_TESTING.md`.
+
+### Keyboard follow-up after Android feedback
+
+The owner confirmed Show/Hide works, but supplied an Android screenshot showing the current-password input still covered on the account screen. The earlier keyboard implementation is therefore not accepted on device. Replaced its JavaScript keyboard events, manual measurements and nested avoiding view with SDK-compatible `react-native-keyboard-controller` and `KeyboardAwareScrollView` across shared pages. A root `KeyboardProvider` supplies native keyboard/focused-input tracking; preloading is disabled to avoid a startup keyboard flash. The scroll view reserves keyboard space and keeps a 24-point gap above the keyboard. Reanimated/Worklets are explicitly installed at SDK-compatible versions. These modules are included in SDK 57 Expo Go. The SDK dependency check also requested the compatible Router patch 57.0.29.
+
+The reported invitation failure after blocking matches the deliberate bilateral block policy. The app has no unblock control; no block behavior was changed, as requested. The SQL regression now explicitly checks that both participants are denied repeat invitations while blocked. The revised keyboard behavior still requires retesting on the owner's phone.
+
+For this follow-up, strict typing, lint, formatting, all 22 tests, SDK dependency compatibility and fresh Android/iOS Hermes exports pass. Exports were rerun after all package installations completed. No device keyboard result is inferred from successful bundling.
+
+Expo was patched to 57.0.31 and Router to 57.0.29 as requested by the SDK compatibility check. Installation now reports 21 dependency advisories (18 high, 3 moderate); unresolved findings remain production-release blockers. At the owner's request, Docker Desktop was stopped: hosted Supabase/Expo Go testing and the local unit/Postgres checks do not require its engine. Restart Docker only when local full-service integration testing is needed; its data was not deleted.

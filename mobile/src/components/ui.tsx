@@ -1,20 +1,8 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  type PropsWithChildren,
-} from 'react';
+import { useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import {
   ActivityIndicator,
   AppState,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -22,6 +10,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 export const palette = {
   ink: '#162D2B',
@@ -31,62 +20,18 @@ export const palette = {
   line: '#D1DFD5',
   danger: '#A32938',
 };
-const FocusedField = createContext<(input: TextInput | null) => void>(() => {});
 export function Page({ children }: PropsWithChildren) {
-  const root = useRef<View>(null);
-  const scroll = useRef<ScrollView>(null);
-  const focused = useRef<TextInput | null>(null);
-  const [top, setTop] = useState(0);
-  const revealField = useCallback(() => {
-    if (focused.current?.isFocused() && Keyboard.isVisible()) {
-      scroll.current?.scrollResponderScrollNativeHandleToKeyboard(focused.current, 24, true);
-    }
-  }, []);
-  const focusField = useCallback(
-    (input: TextInput | null) => {
-      focused.current = input;
-      revealField();
-    },
-    [revealField],
-  );
-  useEffect(() => {
-    let frame: number | undefined;
-    const subscription = Keyboard.addListener('keyboardDidShow', () => {
-      if (frame !== undefined) cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(revealField);
-    });
-    return () => {
-      subscription.remove();
-      if (frame !== undefined) cancelAnimationFrame(frame);
-    };
-  }, [revealField]);
   return (
     <SafeAreaView style={styles.page} edges={['bottom', 'left', 'right']}>
-      <View
-        ref={root}
+      <KeyboardAwareScrollView
         style={{ flex: 1 }}
-        onLayout={() => {
-          root.current?.measureInWindow((_x, y) => setTop(y));
-        }}
+        contentContainerStyle={styles.body}
+        bottomOffset={24}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={top}
-        >
-          <ScrollView
-            ref={scroll}
-            style={{ flex: 1 }}
-            contentContainerStyle={styles.body}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            onLayout={revealField}
-            onContentSizeChange={revealField}
-          >
-            <FocusedField.Provider value={focusField}>{children}</FocusedField.Provider>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
+        {children}
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
@@ -136,8 +81,6 @@ export function Field({
   secureTextEntry = false,
   ...props
 }: TextInputProps & { label: string }) {
-  const input = useRef<TextInput>(null);
-  const focusField = useContext(FocusedField);
   const [revealed, setRevealed] = useState(false);
   useEffect(() => {
     if (!secureTextEntry) return;
@@ -152,17 +95,11 @@ export function Field({
       <View style={secureTextEntry ? styles.passwordRow : undefined}>
         <TextInput
           {...props}
-          ref={input}
           secureTextEntry={secureTextEntry && !revealed}
           autoCorrect={secureTextEntry ? false : props.autoCorrect}
           spellCheck={secureTextEntry ? false : props.spellCheck}
-          onFocus={(event) => {
-            focusField(input.current);
-            props.onFocus?.(event);
-          }}
           onBlur={(event) => {
             setRevealed(false);
-            focusField(null);
             props.onBlur?.(event);
           }}
           accessibilityLabel={label}

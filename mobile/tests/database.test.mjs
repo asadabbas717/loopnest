@@ -161,6 +161,7 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
       'blocker loses chat access',
     );
     assert.equal((await db.query('select * from storage.objects')).rows.length, 0);
+    await assert.rejects(db.query("select public.invite('alice')"), /Invitation unavailable/);
     await as(alice);
     assert.equal(
       (await db.query('select * from public.messages')).rows.length,
@@ -171,6 +172,7 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
       db.query('select public.send_message($1,gen_random_uuid(),$2,null)', [cid, 'blocked']),
     );
     await assert.rejects(db.query('select public.reserve_photo($1)', [cid]));
+    await assert.rejects(db.query("select public.invite('bob')"), /Invitation unavailable/);
     await as('', 'anon');
     await assert.rejects(db.query('select * from public.messages'));
     await assert.rejects(db.query('select public.invite($1)', ['bob']));
