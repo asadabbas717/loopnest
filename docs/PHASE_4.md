@@ -10,8 +10,12 @@ The integration suite covers Auth/email verification, API outsider denial and in
 
 - Local typing, lint and 15 unit/Postgres/configuration tests pass.
 - Local full-stack execution is blocked: Docker Desktop fails during startup on a locked `sailor-ingest.sock`. No Docker data was removed or reset. The integration runner fails explicitly rather than skipping this prerequisite.
-- The real suite has been added to Linux CI. Its result must be checked before this phase can be called verified.
+- The real suite passed in [Linux CI run 39642114879](https://github.com/asadabbas717/loopnest/actions/runs/39642114879), commit `401d8302a5c1fd9b055f38ff09b170179bf327c4`: all seven service-level scenarios and their parent test passed (8/8 reported by Node). The standard quality/bundle job also passed.
 - Native-device and hosted-environment behavior remain separate release gates.
+
+The first real run caught a Realtime startup race: a channel joined its WebSocket before database-change replication was ready. The shared mobile/test channel now uses `postgres_changes_options.wait` so readiness and HTTP catch-up happen after the server establishes the subscription. The rerun verified live recipient delivery, outsider silence, resubscription catch-up, and subsequent block enforcement. No fixed sleep was used as the readiness fix.
+
+Phase complete for source changes and isolated real-service verification. Local Windows execution remains dependent on fixing Docker Desktop's startup; the successful CI run does not claim a device run or repair that host issue.
 
 ## Dependency review
 

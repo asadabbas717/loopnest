@@ -1,5 +1,11 @@
 # Verification and release gates
 
+## Phase-4 update
+
+The real-service boundary is now tested in isolated Linux Docker CI: [run 39642114879](https://github.com/asadabbas717/loopnest/actions/runs/39642114879), source commit `401d830`. All 15 local unit/Postgres/configuration checks and all 8 reported integration tests pass, together with typing, lint, formatting and platform exports. The integration suite uses the same API/channel modules as the app and covers real email verification, signed JWT sessions/refresh, private storage size/MIME/authenticated download rules, outsider/block denial, duplicate retries, account changes, live recipient-only delivery and resubscription catch-up. A detected replication-readiness race was fixed and verified by that rerun.
+
+Local Windows Docker startup is still blocked on a locked Docker socket; this host has not run the full stack. Native Keychain/Keystore, picker, TLS/ATS/device behavior, screenshot/caching and hosted-provider configuration remain unverified. The current lockfile reports 24 advisories (18 high, 6 moderate); see `DEPENDENCIES.md`. The older phase snapshots below are historical, not the current integration result.
+
 ## Performed locally
 
 - TypeScript strict mode and Expo lint.
@@ -15,7 +21,7 @@ The initial fresh install reported 29 advisories (19 high, 10 moderate); compati
 
 ## Required before public deployment
 
-1. Run local Supabase or an isolated hosted test backend; exercise real JWT verification, PostgREST RPC response shapes, Storage upload/download MIME and byte limits, and Realtime authorization/disconnects using three accounts.
+1. The isolated local-service CI tests now cover JWT sessions, RPC response shapes, Storage limits, and Realtime access/rejoin. Repeat these checks against the intended hosted test project before deployment, and verify actual network disruption and device background behavior.
 2. Test iOS and Android Keychain/Keystore, token rotation, session corruption, backgrounding, sign-out/account switch, and native picker lifecycles. Verify EXIF/GPS stripping on multiple image formats and OS versions. Neither MIME labels nor client re-encoding are server-side file-content validation.
 3. Add a trusted content validation/moderation path, abuse reporting, account recovery/erasure, media cleanup, and a documented retention policy. Orphan reservations/objects count toward small development quotas and are not automatically removed yet.
 4. Verify email confirmation delivery, CAPTCHA/signup controls, backend aggregate rate limits, free-tier quota behavior, and privacy/terms appropriate to the deployment. No public launch is authorized by this source rebuild.
