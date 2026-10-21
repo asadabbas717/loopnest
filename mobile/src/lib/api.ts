@@ -65,7 +65,10 @@ export async function respond(id: string, accept: boolean) {
   });
   if (error) throw error;
 }
-export async function messages(id: string, before?: string): Promise<Message[]> {
+export async function messages(
+  id: string,
+  before?: Pick<Message, 'created_at' | 'id'>,
+): Promise<Message[]> {
   let query = backend()
     .from('messages')
     .select('id,sender_id,body,photo_id,created_at')
@@ -73,17 +76,31 @@ export async function messages(id: string, before?: string): Promise<Message[]> 
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .limit(40);
-  if (before) query = query.lt('created_at', before);
+  if (before) {
+    uuid(before.id);
+    if (!/^\d{4}-\d{2}-\d{2}T[0-9:.]+(?:Z|[+-]\d{2}:\d{2})$/.test(before.created_at))
+      throw new Error('Invalid history cursor.');
+    query = query.or(
+      `created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`,
+    );
+  }
   const { data, error } = await query;
   if (error) throw error;
   return data;
 }
-export async function send(id: string, messageId: string, text: string, photoId?: string) {
+export async function send(
+  id: string,
+  messageId: string,
+  text: string,
+  expectedSender: string,
+  photoId?: string,
+) {
   const { error } = await backend().rpc('send_message', {
     cid: uuid(id),
     message_id: uuid(messageId),
     content: messageText(text, !!photoId),
     asset_id: photoId ?? null,
+    expected_sender: uuid(expectedSender),
   });
   if (error) throw error;
 }

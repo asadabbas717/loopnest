@@ -78,6 +78,14 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
     await as(bob);
     await db.query('select public.respond_to_invite($1,true)', [cid]);
     await as(alice);
+    await assert.rejects(
+      db.query('select public.send_message($1,gen_random_uuid(),$2,null,$3)', [
+        cid,
+        'wrong session',
+        bob,
+      ]),
+      /Session changed/,
+    );
     await db.query('select public.send_message($1,$2,$3,null)', [cid, mid, 'hello']);
     await db.query('select public.send_message($1,$2,$3,null)', [cid, mid, 'hello']);
     assert.equal(

@@ -167,11 +167,13 @@ begin
 end;
 $$;
 
-create function public.send_message(cid uuid, message_id uuid, content text, asset_id uuid default null)
+create function public.send_message(cid uuid, message_id uuid, content text, asset_id uuid default null, expected_sender uuid default null)
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare actor uuid := auth.uid(); existing public.messages;
 begin
   perform 1 from public.profiles where id=actor for update;
+  if expected_sender is not null and expected_sender <> actor then
+    raise exception 'Session changed' using errcode='42501'; end if;
   if not private.can_chat(cid) then raise exception 'Not authorized' using errcode='42501'; end if;
   select * into existing from public.messages where id=message_id;
   if found then
@@ -195,9 +197,9 @@ end;
 $$;
 
 revoke all on function public.invite(text), public.respond_to_invite(uuid,boolean),
-  public.reserve_photo(uuid), public.send_message(uuid,uuid,text,uuid) from public, anon;
+  public.reserve_photo(uuid), public.send_message(uuid,uuid,text,uuid,uuid) from public, anon;
 grant execute on function public.invite(text), public.respond_to_invite(uuid,boolean),
-  public.reserve_photo(uuid), public.send_message(uuid,uuid,text,uuid) to authenticated;
+  public.reserve_photo(uuid), public.send_message(uuid,uuid,text,uuid,uuid) to authenticated;
 
 -- Private, JPEG-only, 1 MiB max. No object UPDATE means no overwrite attacks.
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)

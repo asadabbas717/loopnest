@@ -10,7 +10,12 @@ const config: ExpoConfig = {
   ios: { bundleIdentifier: 'app.loopnest.mobile', supportsTablet: false },
   android: {
     package: 'app.loopnest.mobile',
-    blockedPermissions: ['android.permission.RECORD_AUDIO', 'android.permission.CAMERA'],
+    blockedPermissions: [
+      'android.permission.RECORD_AUDIO',
+      'android.permission.CAMERA',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+    ],
   },
   plugins: [
     'expo-router',

@@ -4,7 +4,7 @@ An open-source React Native app for invitation-only conversations and private ph
 
 Expo SDK 57, TypeScript, Expo Router, and Supabase Free. Email authentication, accepted invitations, private chat/photos, blocking, and encrypted native session persistence are implemented. No Firebase, required cloud-build subscription, analytics, advertising, public media bucket, or service-role credential in the client. MIT licensed.
 
-This is a development implementation, not a certified or production-ready secure messenger. Conversations will be access-controlled, not end-to-end encrypted. See [security model](docs/SECURITY_MODEL.md), [free-tier policy](docs/FREE_TIER.md), and [development status](docs/STATUS.md).
+This is a development implementation, not a certified or production-ready secure messenger. Conversations are access-controlled, not end-to-end encrypted. See [security model](docs/SECURITY_MODEL.md), [free-tier policy](docs/FREE_TIER.md), [development status](docs/STATUS.md), and [verification/release gates](docs/VERIFICATION.md).
 
 ## Run
 

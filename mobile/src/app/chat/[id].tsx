@@ -237,7 +237,7 @@ export default function Chat() {
                 run(async () => {
                   const oldest = rows[rows.length - 1];
                   if (oldest) {
-                    const older = await messages(id, oldest.created_at);
+                    const older = await messages(id, oldest);
                     setRows((current) => [
                       ...current,
                       ...older.filter(
@@ -332,9 +332,9 @@ export default function Chat() {
             onPress={() =>
               run(async () => {
                 if (!attempt.current) attempt.current = { id: randomUUID(), text };
-                if (photo && !attempt.current.photoId)
-                  attempt.current.photoId = await uploadPhoto(id, photo);
-                await send(id, attempt.current.id, attempt.current.text, attempt.current.photoId);
+                const submission = attempt.current;
+                if (photo && !submission.photoId) submission.photoId = await uploadPhoto(id, photo);
+                await send(id, submission.id, submission.text, actor!, submission.photoId);
                 attempt.current = null;
                 setText('');
                 discardPhoto(photoRef.current);
