@@ -14,7 +14,7 @@ You do **not** need Supabase just to open the app. Without `mobile/.env`, it del
 
 When ready to test live features on multiple phones, use a dedicated Supabase Free project with its HTTPS URL and public publishable key. That works independently of the computer's network address. Never enter a service-role/secret key. Local backend addresses `127.0.0.1` and `10.0.2.2` are for simulators/emulators and do not point to the computer from a physical phone. Do not weaken the backend URL guard to work around this.
 
-Current hosted setup: the app's ignored local configuration points to the owner's Free test project; database migrations and the erasure function are deployed. Live email testing is pending custom SMTP configuration because Supabase's default Free email provider rejected the required code templates. Do not attempt signup until that dependency is resolved. Expo is stopped; restart it explicitly when phone testing is ready.
+Current hosted setup: the app's ignored local configuration points to the owner's Free test project; database migrations and the erasure function are deployed. The owner configured Brevo SMTP and the verification/recovery code templates are applied. Actual inbox delivery remains unverified. Expo is stopped; restart it explicitly when phone testing is ready. Use an email address you control to create a test account, confirm that the code arrives (including checking spam), and verify it in the app. Use only synthetic messages/photos during testing. Do not share passwords or verification codes in issues or chat.
 
 ## Connection troubleshooting
 
