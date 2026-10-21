@@ -31,3 +31,9 @@ The local Windows Docker engine still fails on a locked startup socket; no syste
 Added password recovery with a separate non-persistent Supabase client, delivered email codes, a password-reset screen, single-use code checks, and global refresh-session sign-out after changing a password. Recovery verification never signs the main app into chat. If sign-out fails after a password change, retrying completion does not repeat that change. Existing access JWTs may remain valid until their expiry; global sign-out is not a promise of immediate revocation of all cached access tokens.
 
 Typing, lint and 17 local regression/Postgres/configuration tests pass. Recovery-code delivery, rejection of reused codes and old passwords, and successful new-password sign-in passed in [CI run 39647760704](https://github.com/asadabbas717/loopnest/actions/runs/39647760704), source commit `f433147`. Phase 5 is complete. The owner reports the app opened correctly on a physical Android device; no broader native security assurance is inferred from that launch.
+
+## Phase 6 — account and shared-media erasure
+
+Implemented a password-reauthenticated, server-side account erasure function, frozen-account state, restrictive policies, upload/freeze serialization, physical Storage removal before Auth deletion, and a native confirmation/retry screen. Peer-owned media in conversations removed by account deletion is included in cleanup. The client cannot choose a deletion target, use privileged database functions or hold the service key. Failures leave a frozen, retryable account rather than reporting false success.
+
+Typing, lint and 21 local tests pass, including the full migration chain and failed-media cleanup cases. The new real Edge Runtime/Storage/Auth deletion test is awaiting verification. See `ACCOUNT_ERASURE.md` for behavior, retention boundaries and deployment steps.

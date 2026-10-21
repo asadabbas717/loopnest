@@ -37,7 +37,7 @@ double_confirm_changes = true
 
 [auth.rate_limit]
 email_sent = 30
-sign_in_sign_ups = 10
+sign_in_sign_ups = 60
 token_refresh = 60
 
 [auth.email.template.confirmation]
@@ -47,3 +47,7 @@ content_path = "./supabase/templates/confirmation.html"
 [auth.email.template.recovery]
 subject = "Your Loopnest recovery code"
 content_path = "./supabase/templates/recovery.html"
+
+[functions.delete-account]
+# The handler verifies the bearer with Auth.getUser and reauthenticates the password.
+verify_jwt = false

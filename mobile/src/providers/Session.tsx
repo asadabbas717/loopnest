@@ -2,15 +2,23 @@ import { createContext, useContext, useEffect, useState, type PropsWithChildren 
 import type { Session } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
 import { client } from '../lib/client';
-import { ownProfile, type Profile } from '../lib/api';
+import { ownProfile, accountState, type Profile } from '../lib/api';
 
 const Context = createContext<{
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
   failed: boolean;
+  accountState: 'active' | 'erasing';
   refresh: () => void;
-}>({ session: null, profile: null, loading: true, failed: false, refresh: () => {} });
+}>({
+  session: null,
+  profile: null,
+  loading: true,
+  failed: false,
+  accountState: 'active',
+  refresh: () => {},
+});
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [result, setResult] = useState<{
@@ -18,6 +26,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     revision: number;
     profile: Profile | null;
     failed: boolean;
+    state: 'active' | 'erasing';
   } | null>(null);
   const [booting, setBooting] = useState(!!client);
   const [failed, setFailed] = useState(false);
@@ -63,11 +72,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
     let active = true;
     if (!userId) return;
     ownProfile(userId)
-      .then((next) => {
-        if (active) setResult({ uid: userId, revision, profile: next, failed: false });
+      .then(async (next) => {
+        const state = await accountState();
+        if (active) setResult({ uid: userId, revision, profile: next, failed: false, state });
       })
       .catch(() => {
-        if (active) setResult({ uid: userId, revision, profile: null, failed: true });
+        if (active)
+          setResult({ uid: userId, revision, profile: null, failed: true, state: 'active' });
       });
     return () => {
       active = false;
@@ -77,6 +88,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     <Context.Provider
       value={{
         session,
+        accountState: result && result.uid === userId ? result.state : 'active',
         profile: result?.uid === userId && result?.revision === revision ? result.profile : null,
         loading: booting || (!!userId && (result?.uid !== userId || result?.revision !== revision)),
         failed:

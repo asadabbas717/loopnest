@@ -63,11 +63,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       30000,
     );
     try {
-      await localCli([
-        'start',
-        '-x',
-        'studio,postgres-meta,logflare,vector,supavisor,edge-runtime,imgproxy',
-      ]);
+      await localCli(['start', '-x', 'studio,postgres-meta,logflare,vector,supavisor,imgproxy']);
       console.log('Local Supabase started. No hosted project was contacted.');
     } finally {
       clearInterval(progress);

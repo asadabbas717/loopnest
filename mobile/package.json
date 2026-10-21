@@ -21,8 +21,8 @@
     "lint": "expo lint",
     "test": "node --test tests/*.test.mjs",
     "check": "npm run typecheck && npm run lint && npm test",
-    "format": "prettier --write src tests scripts integration app.config.ts eslint.config.js",
-    "format:check": "prettier --check src tests scripts integration app.config.ts eslint.config.js"
+    "format": "prettier --write src tests scripts integration ../supabase/functions app.config.ts eslint.config.js",
+    "format:check": "prettier --check src tests scripts integration ../supabase/functions app.config.ts eslint.config.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

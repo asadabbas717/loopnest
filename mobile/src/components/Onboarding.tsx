@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { router } from 'expo-router';
 import { Text } from 'react-native';
 import { saveProfile } from '../lib/api';
 import { backend } from '../lib/client';
@@ -34,6 +35,12 @@ export function Onboarding() {
         Usernames are permanent in this version. There is no public directory. Someone who knows
         your username can invite you.
       </Text>
+      <Button
+        title="Account and privacy"
+        secondary
+        disabled={busy}
+        onPress={() => router.push('/account')}
+      />
       <Notice text={error} />
       <Button
         title="Save profile"

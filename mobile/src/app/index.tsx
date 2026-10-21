@@ -9,7 +9,7 @@ import { Onboarding } from '../components/Onboarding';
 import { Button, Field, Heading, Loading, Notice, Page, styles, useAction } from '../components/ui';
 
 export default function Home() {
-  const { session, profile, loading, failed, refresh } = useSession();
+  const { session, profile, loading, failed, refresh, accountState } = useSession();
   const [items, setItems] = useState<Conversation[]>([]);
   const [listError, setListError] = useState('');
   const [handle, setHandle] = useState('');
@@ -84,6 +84,16 @@ export default function Home() {
       </Page>
     );
   if (!session) return <Auth />;
+  if (accountState === 'erasing')
+    return (
+      <Page>
+        <Heading
+          title="Account deletion pending"
+          subtitle="Your conversations and uploads are frozen while deletion finishes."
+        />
+        <Button title="Retry account deletion" onPress={() => router.push('/account')} />
+      </Page>
+    );
   if (!profile) return <Onboarding />;
   return (
     <Page>
@@ -91,6 +101,7 @@ export default function Home() {
         title={`Hello, ${profile.display_name}.`}
         subtitle={`@${profile.username} · Your conversations, by invitation.`}
       />
+      <Button title="Account and privacy" secondary onPress={() => router.push('/account')} />
       <Field
         label="Invite someone by username"
         value={handle}

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 
 // Execute the actual migration and Postgres RLS as low-privilege roles.
@@ -9,11 +9,12 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
   const db = new PGlite();
   try {
     await db.exec(`
-      create role anon; create role authenticated;
+      create role anon; create role authenticated; create role service_role bypassrls;
       create schema auth; create schema storage;
       create table auth.users(id uuid primary key);
       create function auth.uid() returns uuid language sql stable as
         $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+      create function auth.role() returns text language sql stable as $$select current_setting('role',true)$$;
       grant usage on schema auth, storage, public to authenticated, anon;
       grant execute on function auth.uid() to authenticated, anon;
       create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
@@ -22,12 +23,11 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
       grant select,insert,update,delete on storage.objects to authenticated;
       create publication supabase_realtime;
     `);
-    await db.exec(
-      readFileSync(
-        new URL('../../supabase/migrations/202610210001_private_chat.sql', import.meta.url),
-        'utf8',
-      ),
-    );
+    const migrationDirectory = new URL('../../supabase/migrations/', import.meta.url);
+    for (const file of readdirSync(migrationDirectory)
+      .filter((name) => name.endsWith('.sql'))
+      .sort())
+      await db.exec(readFileSync(new URL(file, migrationDirectory), 'utf8'));
     const alice = '00000000-0000-4000-8000-000000000001';
     const bob = '00000000-0000-4000-8000-000000000002';
     const eve = '00000000-0000-4000-8000-000000000003';

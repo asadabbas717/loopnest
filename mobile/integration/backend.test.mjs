@@ -117,6 +117,7 @@ test(
       let photoId;
       let path;
       const jpeg = readFileSync(new URL('./fixtures/pixel.jpg', import.meta.url));
+      let peerPhotoPath;
       await t.test(
         'private Storage enforces path ownership, byte/MIME limits and authenticated downloads',
         async () => {
@@ -171,6 +172,19 @@ test(
             { headers: { apikey: local.key, Authorization: `Bearer ${current.access_token}` } },
           );
           assert.ok(authenticated.ok, 'the mobile authenticated image route works');
+          const peerAsset = await bob.client.rpc('reserve_photo', { cid }).single();
+          ok(peerAsset.error, 'peer photo reservation');
+          peerPhotoPath = peerAsset.data.path;
+          paths.push(peerPhotoPath);
+          ok(
+            (
+              await bob.client.storage
+                .from('chat-photos')
+                .upload(peerPhotoPath, jpeg, { contentType: 'image/jpeg' })
+            ).error,
+            'peer photo upload',
+          );
+          await bob.api.send(cid, randomUUID(), 'peer-owned photo', bob.id, peerAsset.data.id);
         },
       );
       await t.test(
@@ -312,6 +326,58 @@ test(
             (await main.auth.signInWithPassword({ email: eve.email, password: replacement })).error,
             'new password works',
           );
+        },
+      );
+      await t.test(
+        'account erasure requires password, removes both participants media and denies stale sessions',
+        async () => {
+          assert.ok(
+            (await alice.client.rpc('begin_account_erasure', { actor: bob.id })).error,
+            'client cannot freeze someone else',
+          );
+          assert.ok(
+            (await alice.client.rpc('account_erasure_paths', { actor: bob.id })).error,
+            'client cannot enumerate erasure scope',
+          );
+          const invalid = await fetch(`${local.url}/functions/v1/delete-account`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', apikey: local.key },
+            body: JSON.stringify({ password, confirmation: 'DELETE' }),
+          });
+          assert.equal(invalid.status, 401, 'missing bearer denied');
+          const wrong = await alice.client.functions.invoke('delete-account', {
+            body: { password: 'wrong-password', confirmation: 'DELETE' },
+          });
+          assert.ok(wrong.error, 'wrong password cannot delete account');
+          ok(
+            (await admin.auth.admin.getUserById(alice.id)).error,
+            'account survives wrong password',
+          );
+          const erased = await alice.client.functions.invoke('delete-account', {
+            body: { password, confirmation: 'DELETE' },
+          });
+          ok(erased.error, 'trusted erasure endpoint succeeds');
+          assert.equal(erased.data.deleted, true);
+          users.splice(users.indexOf(alice.id), 1);
+          assert.ok((await admin.auth.admin.getUserById(alice.id)).error, 'auth account removed');
+          assert.ok(
+            (await admin.storage.from('chat-photos').download(path)).error,
+            'owner media physically removed',
+          );
+          assert.ok(
+            (await admin.storage.from('chat-photos').download(peerPhotoPath)).error,
+            'peer-owned media in erased chat removed',
+          );
+          assert.equal(
+            (await admin.from('conversations').select('id').eq('id', cid)).data.length,
+            0,
+          );
+          assert.equal(
+            (await alice.api.messages(cid)).length,
+            0,
+            'old JWT cannot read erased data',
+          );
+          await assert.rejects(alice.api.send(cid, randomUUID(), 'stale send', alice.id));
         },
       );
     } finally {
