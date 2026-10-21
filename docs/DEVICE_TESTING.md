@@ -18,6 +18,8 @@ Current hosted setup: the app's ignored local configuration points to the owner'
 
 ## Next device checks
 
+Accepted on the owner's Android device: password Show/Hide, revised keyboard handling, wrong-password deletion denial, correct-password account deletion, rejection of deleted-account sign-in, disappearance of the peer's shared conversation, and sign-out/account switching without cross-account content. Background/app-switcher behavior, offline/reconnect and physical hosted-photo deletion have not been explicitly confirmed. The checklist below includes repeatable regression steps as well as outstanding checks.
+
 After the keyboard follow-up, fully restart Metro with `npm run start:device -- --clear` and reload the project in Expo Go. New keyboard dependencies require a fresh bundle rather than relying on Fast Refresh. SDK 57 Expo Go includes these modules; an existing standalone development build needs rebuilding to include them. The account screen's password and DELETE fields are the primary regression case from the owner's screenshot.
 
 1. Verify Show/Hide on sign-in, signup and recovery without losing typed characters or the cursor. Leaving the password field or backgrounding the app must hide it again. Repeat with a long password and larger system text.
