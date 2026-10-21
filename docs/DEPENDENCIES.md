@@ -1,5 +1,7 @@
 # Dependency review — October 21, 2026
 
+October 22 update: after compatible Expo 57.0.31/Router 57.0.29 patches and adding SDK-compatible keyboard handling, a fresh audit reports 21 affected packages (18 high, 3 moderate, no critical). `decode-uri-component`, `braces` and `node-forge` findings remain. Reanimated/Worklets are also flagged through their affected dependency paths; these are not independent new advisories. No framework-breaking downgrade or override was applied. The table below records the phase-4 analysis and must not be read as a current complete package inventory. Review the current lockfile and audit again before release.
+
 The phase-4 lockfile reports 24 npm advisories: 18 high, 6 moderate, no critical. npm counts affected dependents as well as the underlying vulnerable package, so this is not a count of 24 independent flaws. No forced Expo/React Native downgrade or untested major-version override was applied.
 
 | Package / dependency path | Evidence and action |

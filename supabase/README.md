@@ -1,6 +1,6 @@
 # Backend setup
 
-Use a **new, isolated Supabase Free project**. This rewrite does not migrate old Firebase users or data. No backend has been deployed from this workspace. Never paste database passwords or secret/service-role keys into the mobile app.
+Use a **new, isolated Supabase Free project**. This rewrite does not migrate old Firebase users or data. The owner's dedicated test project has been configured; see `docs/STATUS.md` for deployment and acceptance evidence. Never paste database passwords or secret/service-role keys into the mobile app.
 
 ## Hosted development
 
