@@ -10,6 +10,7 @@
   },
   "scripts": {
     "start": "expo start",
+    "start:device": "expo start --go --lan",
     "backend:start": "node scripts/backend.mjs start",
     "backend:stop": "node scripts/backend.mjs stop",
     "backend:env": "node scripts/backend.mjs env",
