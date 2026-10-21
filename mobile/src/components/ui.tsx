@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { userErrorMessage } from '../domain/user-errors';
 
 export const palette = {
   ink: '#162D2B',
@@ -156,27 +157,13 @@ export function useAction() {
     try {
       await work();
     } catch (e) {
-      const code = e && typeof e === 'object' && 'code' in e ? e.code : '';
-      const message = e && typeof e === 'object' && 'message' in e ? String(e.message) : '';
-      if (code === '23505') setError('That username is already taken.');
-      else if (code === 'invalid_credentials') setError('Email or password is incorrect.');
-      else if (code === 'email_not_confirmed') setError('Verify your email first.');
-      else if (/limit reached/i.test(message))
-        setError('Your usage limit has been reached. Try again later.');
-      else if (
-        e instanceof Error &&
-        /^(Use |Enter |Write |Choose |Your name |Messages can |This image |Photo size )/.test(
-          message,
-        )
-      )
-        setError(message);
-      else setError('Could not complete this action. Check your connection and try again.');
+      setError(userErrorMessage(e));
     } finally {
       lock.current = false;
       setBusy(false);
     }
   };
-  return { busy, error, run };
+  return { busy, error, run, clearError: () => setError('') };
 }
 export const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: palette.paper },

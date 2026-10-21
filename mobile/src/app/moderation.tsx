@@ -4,6 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import { backend } from '../lib/client';
 import { createModerationApi, type ModerationItem } from '../lib/moderation-api';
 import { PrivatePhoto } from '../components/PrivatePhoto';
+import { userErrorMessage } from '../domain/user-errors';
 import { Button, Heading, Notice, Page, styles, useAction } from '../components/ui';
 
 export default function Moderation() {
@@ -19,11 +20,8 @@ export default function Moderation() {
         .then((data) => {
           if (active) setRows(data);
         })
-        .catch(() => {
-          if (active)
-            setLoadError(
-              'This queue is unavailable or your account is not an authorized moderator.',
-            );
+        .catch((issue) => {
+          if (active) setLoadError(userErrorMessage(issue));
         });
       return () => {
         active = false;

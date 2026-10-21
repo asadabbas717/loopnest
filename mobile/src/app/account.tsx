@@ -42,6 +42,13 @@ export default function Account() {
   return (
     <Page>
       <Heading title="Account and privacy" subtitle={session.user.email} />
+      {accountState === 'active' && (
+        <Button
+          title="Friends and blocked users"
+          secondary
+          onPress={() => router.push('/friends')}
+        />
+      )}
       {moderator && (
         <Button
           title="Review reported messages"

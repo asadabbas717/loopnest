@@ -7,8 +7,21 @@ type Dependencies = {
   remove: (paths: string[]) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
 };
-const reply = (status: number, message: string) =>
-  new Response(JSON.stringify({ message, deleted: status === 200 }), {
+const reply = (
+  status: number,
+  message: string,
+  code = (
+    {
+      200: "account_deleted",
+      400: "invalid_confirmation",
+      401: "auth_required",
+      403: "request_forbidden",
+      429: "rate_limited",
+      503: "deletion_unavailable",
+    } as Record<number, string>
+  )[status] ?? "invalid_request",
+) =>
+  new Response(JSON.stringify({ message, code, deleted: status === 200 }), {
     status,
     headers: {
       "Content-Type": "application/json",
@@ -66,7 +79,7 @@ export function accountErasureHandler(deps: Dependencies) {
       )
         return reply(400, "Confirm account deletion.");
       if (!(await deps.reauthenticate(actor, value.password)))
-        return reply(403, "Password verification failed.");
+        return reply(403, "Password verification failed.", "wrong_password");
       await deps.freeze(actor.id);
       // Paths remain stable until Auth deletion cascades metadata. Remove physical
       // objects through Storage, including peer-owned media in conversations erased.
@@ -82,7 +95,14 @@ export function accountErasureHandler(deps: Dependencies) {
         503,
         "Deletion is pending. Retry or contact the project maintainer.",
       );
-    } catch {
+    } catch (issue) {
+      if (
+        issue &&
+        typeof issue === "object" &&
+        "code" in issue &&
+        issue.code === "over_request_rate_limit"
+      )
+        return reply(429, "Too many attempts. Try again later.");
       return reply(
         503,
         "Deletion is pending or unavailable. Retry this request.",

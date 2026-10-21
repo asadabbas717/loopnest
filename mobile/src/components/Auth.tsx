@@ -12,7 +12,7 @@ export function Auth() {
   const [verification, setVerification] = useState(false);
   const [code, setCode] = useState('');
   const [recovering, setRecovering] = useState(false);
-  const { busy, error, run } = useAction();
+  const { busy, error, run, clearError } = useAction();
   if (recovering) return <Recovery onClose={() => setRecovering(false)} />;
   return (
     <Page>
@@ -97,6 +97,7 @@ export function Auth() {
           secondary
           disabled={busy}
           onPress={() => {
+            clearError();
             setPassword('');
             setRecovering(true);
           }}
@@ -113,6 +114,7 @@ export function Auth() {
         disabled={busy}
         secondary
         onPress={() => {
+          clearError();
           setRegister(!register && !verification);
           setVerification(false);
           setPassword('');

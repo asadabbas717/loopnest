@@ -10,6 +10,9 @@ import { createModerationApi } from '../src/lib/moderation-api.ts';
 import { messageChannel } from '../src/lib/message-channel.ts';
 import { localStatus } from '../scripts/backend.mjs';
 import { cleanAbandonedPhotos } from '../scripts/photo-cleanup.mjs';
+import { createFriendsApi } from '../src/lib/friends-api.ts';
+import { createAccountApi } from '../src/lib/account-api.ts';
+import { userErrorMessage } from '../src/domain/user-errors.ts';
 
 // Never accepts a URL/admin key from environment variables. The runner obtains
 // ephemeral credentials from the project-local CLI and refuses hosted endpoints.
@@ -421,6 +424,46 @@ test(
           'blocked photo download denied',
         );
       });
+      await t.test(
+        'Friends lists are private and unblocking restores only mutually available chat',
+        async () => {
+          const aliceFriends = createFriendsApi(() => alice.client);
+          const bobFriends = createFriendsApi(() => bob.client);
+          const outsider = createFriendsApi(() => eve.client);
+          assert.equal((await outsider.list('active')).length, 0);
+          assert.equal((await outsider.list('blocked')).length, 0);
+          assert.equal((await aliceFriends.list('active')).length, 0);
+          assert.equal(
+            (await aliceFriends.list('blocked')).length,
+            0,
+            'reverse block is not disclosed',
+          );
+          assert.equal((await bobFriends.list('blocked'))[0].user_id, alice.id);
+          await assert.rejects(outsider.setBlocked(eve.id, alice.id, true));
+          await assert.rejects(aliceFriends.setBlocked(bob.id, alice.id, false));
+          await aliceFriends.setBlocked(alice.id, bob.id, true);
+          await aliceFriends.setBlocked(alice.id, bob.id, false);
+          assert.equal((await alice.api.messages(cid)).length, 0, 'cannot lift peer block');
+          await bobFriends.setBlocked(bob.id, alice.id, false);
+          await bobFriends.setBlocked(bob.id, alice.id, false);
+          const friends = await aliceFriends.list('active');
+          assert.equal(friends.length, 1);
+          assert.equal(friends[0].user_id, bob.id);
+          assert.equal(friends[0].conversation_id, cid);
+          assert.equal((await aliceFriends.list('active', friends[0].username)).length, 0);
+          assert.ok(
+            (await alice.api.messages(cid)).length > 0,
+            'unblocking preserves accepted history',
+          );
+          await alice.api.send(cid, randomUUID(), 'after unblock', alice.id);
+          ok(
+            (await bob.client.storage.from('chat-photos').download(path)).error,
+            'accepted shared photo restored',
+          );
+          // Leave the existing blocked scenario in place for subsequent checks.
+          await bobFriends.setBlocked(bob.id, alice.id, true);
+        },
+      );
       await t.test('sign-out and a fresh sign-in do not carry over another account', async () => {
         ok((await bob.client.auth.signOut()).error, 'sign-out succeeds');
         assert.equal((await bob.client.auth.getSession()).data.session, null);
@@ -492,10 +535,16 @@ test(
             body: JSON.stringify({ password, confirmation: 'DELETE' }),
           });
           assert.equal(invalid.status, 401, 'missing bearer denied');
-          const wrong = await alice.client.functions.invoke('delete-account', {
-            body: { password: 'wrong-password', confirmation: 'DELETE' },
-          });
-          assert.ok(wrong.error, 'wrong password cannot delete account');
+          await assert.rejects(
+            createAccountApi(() => alice.client).deleteAccount('wrong-password', 'DELETE'),
+            (issue) => {
+              assert.equal(
+                userErrorMessage(issue),
+                'Wrong password. Enter your current password and try again.',
+              );
+              return true;
+            },
+          );
           ok(
             (await admin.auth.admin.getUserById(alice.id)).error,
             'account survives wrong password',

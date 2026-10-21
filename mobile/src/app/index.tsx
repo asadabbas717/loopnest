@@ -4,6 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { configured, backend } from '../lib/client';
 import { conversations, invite, type Conversation } from '../lib/api';
 import { useSession } from '../providers/Session';
+import { userErrorMessage } from '../domain/user-errors';
 import { Auth } from '../components/Auth';
 import { Onboarding } from '../components/Onboarding';
 import { Button, Field, Heading, Loading, Notice, Page, styles, useAction } from '../components/ui';
@@ -21,9 +22,9 @@ export default function Home() {
     try {
       setItems(await conversations());
       setListError('');
-    } catch {
+    } catch (issue) {
       setItems([]);
-      setListError('Could not load conversations.');
+      setListError(userErrorMessage(issue));
     }
   }, [userId, profileId]);
   useFocusEffect(
@@ -37,10 +38,10 @@ export default function Home() {
               setListError('');
             }
           })
-          .catch(() => {
+          .catch((issue) => {
             if (active) {
               setItems([]);
-              setListError('Could not load conversations.');
+              setListError(userErrorMessage(issue));
             }
           });
       else setItems([]);
@@ -112,6 +113,7 @@ export default function Home() {
         subtitle={`@${profile.username} · Your conversations, by invitation.`}
       />
       <Button title="Account and privacy" secondary onPress={() => router.push('/account')} />
+      <Button title="Friends" secondary onPress={() => router.push('/friends')} />
       <Field
         label="Invite someone by username"
         value={handle}

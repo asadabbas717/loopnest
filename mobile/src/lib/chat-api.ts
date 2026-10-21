@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { displayName, messageText, username, uuid } from '../domain/validation.ts';
+import { createFriendsApi } from './friends-api.ts';
+import { UserFacingError } from '../domain/user-errors.ts';
 export type Profile = { id: string; username: string; display_name: string };
 export type Conversation = {
   id: string;
@@ -30,6 +32,7 @@ export function createChatApi(backend: () => SupabaseClient) {
     const { error } = await backend()
       .from('profiles')
       .insert({ id, username: username(handle), display_name: displayName(name) });
+    if (error?.code === '23505') throw new UserFacingError('username_taken');
     if (error) throw error;
   }
   async function conversations(): Promise<Conversation[]> {
@@ -106,8 +109,7 @@ export function createChatApi(backend: () => SupabaseClient) {
     if (error) throw error;
   }
   async function blockUser(self: string, other: string) {
-    const { error } = await backend().from('blocks').insert({ blocker: self, blocked: other });
-    if (error) throw error;
+    await createFriendsApi(backend).setBlocked(self, other, true);
   }
 
   return {

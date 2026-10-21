@@ -88,3 +88,27 @@ test('erasure bounds request bodies and never logs or reflects secrets', async (
   assert.equal(response.status, 413);
   assert.equal((await response.text()).includes('secret'), false);
 });
+test('erasure reports wrong password separately from unavailable Auth or throttling', async () => {
+  const { deps, calls } = fixture();
+  const attempt = (reauthenticate) =>
+    accountErasureHandler({ ...deps, reauthenticate })(
+      request({ password: 'private-password', confirmation: 'DELETE' }),
+    );
+  assert.equal((await (await attempt(async () => false)).json()).code, 'wrong_password');
+  assert.equal(
+    (
+      await (
+        await attempt(async () => {
+          throw new Error('Auth unavailable');
+        })
+      ).json()
+    ).code,
+    'deletion_unavailable',
+  );
+  const throttled = await attempt(async () => {
+    throw { code: 'over_request_rate_limit' };
+  });
+  assert.equal(throttled.status, 429);
+  assert.equal((await throttled.json()).code, 'rate_limited');
+  assert.deepEqual(calls, []);
+});

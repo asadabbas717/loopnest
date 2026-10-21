@@ -10,6 +10,8 @@ Deno.serve(
   accountErasureHandler({
     async actor(token) {
       const { data, error } = await admin.auth.getUser(token);
+      if (error && error.status !== 401 && error.status !== 403)
+        throw new Error("Auth service unavailable");
       return !error && data.user?.email
         ? { id: data.user.id, email: data.user.email }
         : null;
@@ -22,6 +24,13 @@ Deno.serve(
         email: actor.email,
         password,
       });
+      if (error && error.code !== "invalid_credentials") {
+        if (error.status === 429)
+          throw Object.assign(new Error("Auth rate limit"), {
+            code: "over_request_rate_limit",
+          });
+        throw new Error("Auth service unavailable");
+      }
       const valid = !error && data.user?.id === actor.id;
       if (data.session) await isolated.auth.signOut({ scope: "local" });
       return valid;

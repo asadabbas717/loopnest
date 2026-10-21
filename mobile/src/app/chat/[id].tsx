@@ -18,6 +18,7 @@ import {
 import { choosePhoto, discardPhoto, uploadPhoto, type Photo } from '../../lib/photos';
 import { useSession } from '../../providers/Session';
 import { PrivatePhoto } from '../../components/PrivatePhoto';
+import { userErrorMessage } from '../../domain/user-errors';
 import {
   Button,
   Field,
@@ -93,11 +94,11 @@ export default function Chat() {
             if (active) setRows(history);
           }
         })
-        .catch(() => {
+        .catch((issue) => {
           if (active) {
             setRows([]);
             setChat(null);
-            setLoadError('Could not load this conversation.');
+            setLoadError(userErrorMessage(issue));
           }
         })
         .finally(() => {
@@ -127,10 +128,10 @@ export default function Chat() {
           .then((next) => {
             if (active) setRows(next);
           })
-          .catch(() => {
+          .catch((issue) => {
             if (active) {
               setRows([]);
-              setLoadError('Connection lost. Refresh to reconnect.');
+              setLoadError(userErrorMessage(issue));
             }
           });
       }, 300);

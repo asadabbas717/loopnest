@@ -85,3 +85,9 @@ Applied the tested migration to the owner's dedicated hosted project. A privileg
 ### Additional Android acceptance — October 22, 2026
 
 The owner reports that a wrong password preserved the account; the correct password permanently deleted it; subsequent sign-in was rejected; and the shared conversation disappeared from the peer's account. Sign-out and account switching did not show the previous account's content. These are user-reported Expo Go results. They do not independently establish physical hosted-photo deletion, backup erasure or background/app-switcher privacy. Physical deletion is covered by the isolated real-backend CI suite; hosted storage inspection and native background/signed-build checks remain separate acceptance work.
+
+## Phase 10 — Friends and specific warnings (integration verification pending)
+
+Added a paginated Friends screen with accepted active peers, the caller's blocked users, existing-conversation navigation and block/unblock controls. Server checks prevent directory enumeration, stale-actor writes and removing someone else's block. Unblocking does not bypass reciprocal blocks or invitation consent. Active denotes an available connection, not online presence.
+
+Deletion now returns machine-readable safe errors and the client reads them from HTTP invocation failures. Wrong password, expired session, throttling and unavailable services have distinct messages. Shared warning mapping covers known Auth/database/quota failures; unknown errors no longer incorrectly suggest a connection problem. Photo loading and failure states are distinct. Thirty local tests, strict typing, lint and formatting pass; real service integration and platform exports are pending. Hosted migration/function deployment is pending. See `FRIENDS_AND_ERRORS.md`. Background/app-switcher testing is deferred as requested, not accepted as passed.

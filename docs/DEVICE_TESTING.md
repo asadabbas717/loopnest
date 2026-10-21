@@ -24,11 +24,13 @@ After the keyboard follow-up, fully restart Metro with `npm run start:device -- 
 
 1. Verify Show/Hide on sign-in, signup and recovery without losing typed characters or the cursor. Leaving the password field or backgrounding the app must hide it again. Repeat with a long password and larger system text.
 2. Open each form's bottom field, switch fields while the keyboard remains open, dismiss/reopen the keyboard and scroll to the submit button. Check signup, recovery, profile onboarding, account deletion confirmation (without submitting) and the chat composer.
-3. With two disposable accounts, block the peer and verify neither can send or retrieve more chat/photo content or re-invite the other. This is intentional; there is no unblock control yet. Report a message before blocking to check submission; moderator review needs an operator-appointed moderator.
+3. With two disposable accounts, block the peer and verify neither can send or retrieve more chat/photo content or re-invite the other. Open Friends → Blocked users and unblock them. With an accepted connection and no reciprocal block, the existing chat/history should be available again under Active friends. If both users blocked each other, removing one block must not lift the other's restriction. Report a message before blocking to check submission; moderator review needs an operator-appointed moderator.
 4. Using disposable accounts only, test account deletion with a wrong password (must preserve the account), then the correct password and DELETE confirmation. Confirm the account cannot sign in again and its shared conversation/photos disappear from the peer's app after refresh. Deletion affects both participants' conversation, so never use valuable test content.
 5. Background/reopen, sign out, and switch accounts: no previous account's messages or photos should appear. Repeat offline/reconnect without creating duplicate messages.
 
 Expo is stopped; restart it explicitly when phone testing is ready. These checks do not replace signed-build and iOS testing.
+
+Background/app-switcher testing is currently deferred by the owner. Next requested-feature checks are Friends navigation, block/unblock, and the specific wrong-password deletion warning. See `FRIENDS_AND_ERRORS.md`; do not repeat destructive deletion with an account you want to keep.
 
 ## Connection troubleshooting
 

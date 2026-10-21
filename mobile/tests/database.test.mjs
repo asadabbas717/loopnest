@@ -77,6 +77,23 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
     );
     await as(bob);
     await db.query('select public.respond_to_invite($1,true)', [cid]);
+    assert.equal(
+      (await db.query("select * from public.friend_connections('active')")).rows[0].user_id,
+      alice,
+    );
+    assert.equal(
+      (await db.query("select * from public.friend_connections('active','alice')")).rows.length,
+      0,
+    );
+    await as(eve);
+    assert.equal(
+      (await db.query("select * from public.friend_connections('active')")).rows.length,
+      0,
+    );
+    await assert.rejects(
+      db.query('select public.set_user_block($1,true,$2)', [alice, eve]),
+      /Connection unavailable/,
+    );
     await as(alice);
     await assert.rejects(
       db.query('select public.send_message($1,gen_random_uuid(),$2,null,$3)', [
@@ -231,7 +248,47 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
     );
     await assert.rejects(db.query('select public.reserve_photo($1)', [cid]));
     await assert.rejects(db.query("select public.invite('bob')"), /Invitation unavailable/);
+    // Friends exposes only the caller's own block list, and unblocking cannot
+    // override the peer's block or a changed authenticated identity.
+    assert.equal(
+      (await db.query("select * from public.friend_connections('active')")).rows.length,
+      0,
+    );
+    assert.equal(
+      (await db.query("select * from public.friend_connections('blocked')")).rows.length,
+      0,
+    );
+    await assert.rejects(
+      db.query('select public.set_user_block($1,false,$2)', [alice, bob]),
+      /Session changed/,
+    );
+    await db.query('select public.set_user_block($1,true,$2)', [bob, alice]);
+    assert.equal(
+      (await db.query("select * from public.friend_connections('blocked')")).rows[0].user_id,
+      bob,
+    );
+    await db.query('select public.set_user_block($1,false,$2)', [bob, alice]);
+    assert.equal(
+      (await db.query('select * from public.messages')).rows.length,
+      0,
+      'peer block still enforced',
+    );
+    await as(bob);
+    await db.query('select public.set_user_block($1,false,$2)', [alice, bob]);
+    await db.query('select public.set_user_block($1,false,$2)', [alice, bob]);
+    assert.equal(
+      (await db.query("select * from public.friend_connections('active')")).rows[0].user_id,
+      alice,
+    );
+    assert.ok(
+      (await db.query('select * from public.messages')).rows.length > 0,
+      'consented chat restored',
+    );
     await as('', 'anon');
+    await assert.rejects(
+      db.query("select * from public.friend_connections('active')"),
+      /permission denied/,
+    );
     await assert.rejects(db.query('select * from public.messages'));
     await assert.rejects(db.query('select public.invite($1)', ['bob']));
     await db.exec('reset role');
