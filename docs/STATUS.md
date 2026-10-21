@@ -71,3 +71,11 @@ The reported invitation failure after blocking matches the deliberate bilateral 
 For this follow-up, strict typing, lint, formatting, all 22 tests, SDK dependency compatibility and fresh Android/iOS Hermes exports pass. Exports were rerun after all package installations completed. No device keyboard result is inferred from successful bundling.
 
 Expo was patched to 57.0.31 and Router to 57.0.29 as requested by the SDK compatibility check. Installation now reports 21 dependency advisories (18 high, 3 moderate); unresolved findings remain production-release blockers. At the owner's request, Docker Desktop was stopped: hosted Supabase/Expo Go testing and the local unit/Postgres checks do not require its engine. Restart Docker only when local full-service integration testing is needed; its data was not deleted.
+
+The owner subsequently confirmed that the revised keyboard handling works as intended on the phone. The password-visibility and keyboard defects are accepted on that device; this does not imply iOS or signed-build acceptance.
+
+## Phase 9 — abandoned-media cleanup (integration verification pending)
+
+Implemented an operator-only dry-run/apply command and service-only database functions for unattached reservations older than 48 hours. Asset locks and triggers prevent attaching/uploading a photo after cleanup marks it. Physical Storage deletion precedes metadata finalization; failures retain retryable state. Sent and recent photos are excluded, and batch limits bound each invocation. The command retrieves privileged credentials only into memory from the authorized CLI session and prints counts only.
+
+Strict typing, lint and 26 local tests pass, including the migration chain, privilege denial, shared/recent-photo protection, physical-delete-before-finalization and failure ordering. Real Storage integration verification is pending. Docker remains stopped locally; Linux CI will run the full stack. No hosted migration or cleanup has been applied for this phase yet. Maintenance is manual during development; a monitored scheduler and broader retention/validation remain public-release requirements. See `PHOTO_MAINTENANCE.md`.

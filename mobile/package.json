@@ -14,6 +14,7 @@
     "backend:start": "node scripts/backend.mjs start",
     "backend:stop": "node scripts/backend.mjs stop",
     "backend:env": "node scripts/backend.mjs env",
+    "maintenance:photos": "node scripts/maintenance.mjs",
     "test:integration": "node --test integration/*.test.mjs",
     "android": "expo run:android",
     "ios": "expo run:ios",

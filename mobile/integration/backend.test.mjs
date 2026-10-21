@@ -9,6 +9,7 @@ import { createRecoveryApi } from '../src/lib/recovery-api.ts';
 import { createModerationApi } from '../src/lib/moderation-api.ts';
 import { messageChannel } from '../src/lib/message-channel.ts';
 import { localStatus } from '../scripts/backend.mjs';
+import { cleanAbandonedPhotos } from '../scripts/photo-cleanup.mjs';
 
 // Never accepts a URL/admin key from environment variables. The runner obtains
 // ephemeral credentials from the project-local CLI and refuses hosted endpoints.
@@ -278,6 +279,83 @@ test(
           );
           await bob.client.removeChannel(rejoined);
           await eve.client.removeChannel(eveChannel);
+        },
+      );
+      await t.test(
+        'abandoned-photo cleanup is privileged, retryable and preserves shared/recent media',
+        async () => {
+          const reserve = async () => {
+            const result = await alice.client.rpc('reserve_photo', { cid }).single();
+            ok(result.error, 'reserve maintenance fixture');
+            return result.data;
+          };
+          const abandoned = await reserve();
+          const empty = await reserve();
+          const recent = await reserve();
+          paths.push(abandoned.path);
+          ok(
+            (
+              await alice.client.storage
+                .from('chat-photos')
+                .upload(abandoned.path, jpeg, { contentType: 'image/jpeg' })
+            ).error,
+            'abandoned fixture upload',
+          );
+          const shared = await admin.from('photo_assets').select('id').eq('path', path).single();
+          ok(shared.error, 'shared fixture lookup');
+          ok(
+            (
+              await admin
+                .from('photo_assets')
+                .update({ created_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString() })
+                .in('id', [shared.data.id, abandoned.id, empty.id])
+            ).error,
+            'age synthetic fixtures',
+          );
+          assert.ok(
+            (await alice.client.rpc('photo_cleanup_count')).error,
+            'ordinary client cannot inspect maintenance scope',
+          );
+          assert.ok(
+            (await eve.client.rpc('claim_photo_cleanup')).error,
+            'outsider cannot claim cleanup',
+          );
+          const preview = await cleanAbandonedPhotos(admin);
+          assert.equal(Number(preview.eligible), 2);
+          assert.equal(preview.dryRun, true);
+          ok(
+            (await alice.client.storage.from('chat-photos').download(abandoned.path)).error,
+            'dry run preserves bytes',
+          );
+          const claim = await admin.rpc('claim_photo_cleanup', { batch_size: 100 });
+          ok(claim.error, 'claim abandoned assets');
+          assert.deepEqual(
+            new Set(claim.data.map((row) => row.id)),
+            new Set([abandoned.id, empty.id]),
+          );
+          await assert.rejects(
+            alice.api.send(cid, randomUUID(), 'late attachment', alice.id, abandoned.id),
+          );
+          assert.ok(
+            (await admin.rpc('finish_photo_cleanup', { asset_ids: [abandoned.id] })).error,
+            'cannot finalize before physical removal',
+          );
+          const result = await cleanAbandonedPhotos(admin, { apply: true });
+          assert.equal(result.removed, 2);
+          assert.equal(Number(result.remaining), 0);
+          assert.ok(
+            (await admin.storage.from('chat-photos').download(abandoned.path)).error,
+            'abandoned bytes physically removed',
+          );
+          ok(
+            (await bob.client.storage.from('chat-photos').download(path)).error,
+            'old shared photo retained',
+          );
+          assert.equal(
+            (await admin.from('photo_assets').select('id').eq('id', recent.id)).data.length,
+            1,
+            'recent reservation retained',
+          );
         },
       );
       await t.test(

@@ -153,6 +153,64 @@ test('Postgres authorization: consent, outsiders, immutable identity, photos, bl
       db.query('select public.send_message($1,gen_random_uuid(),$2,null)', [cid, 'too many']),
       /limit reached/,
     );
+    // Cleanup is privileged, age-bounded, protects shared files, and cannot race
+    // a new attachment once a reservation has been marked for physical deletion.
+    const abandoned = (await db.query('select * from public.reserve_photo($1)', [cid])).rows[0];
+    const empty = (await db.query('select * from public.reserve_photo($1)', [cid])).rows[0];
+    const recent = (await db.query('select * from public.reserve_photo($1)', [cid])).rows[0];
+    await db.query('insert into storage.objects(bucket_id,name) values($1,$2)', [
+      'chat-photos',
+      abandoned.path,
+    ]);
+    await assert.rejects(db.query('select public.photo_cleanup_count()'), /permission denied/);
+    await as('', 'anon');
+    await assert.rejects(db.query('select public.claim_photo_cleanup()'), /permission denied/);
+    await db.exec('reset role');
+    await db.query(
+      "update public.photo_assets set created_at=now()-interval '72 hours' where id=any($1::uuid[])",
+      [[asset.id, abandoned.id, empty.id]],
+    );
+    await as('', 'service_role');
+    assert.equal(
+      Number((await db.query('select public.photo_cleanup_count() as count')).rows[0].count),
+      2,
+    );
+    await assert.rejects(db.query('select public.claim_photo_cleanup(101)'), /Invalid batch/);
+    const claimed = (await db.query('select * from public.claim_photo_cleanup()')).rows;
+    assert.deepEqual(new Set(claimed.map((row) => row.id)), new Set([abandoned.id, empty.id]));
+    await assert.rejects(
+      db.query('select public.finish_photo_cleanup($1::uuid[])', [[abandoned.id, empty.id]]),
+      /Physical cleanup/,
+    );
+    await db.exec('reset role');
+    await assert.rejects(
+      db.query(
+        'insert into public.messages(id,conversation_id,sender_id,photo_id) values(gen_random_uuid(),$1,$2,$3)',
+        [cid, alice, abandoned.id],
+      ),
+      /Photo unavailable/,
+    );
+    // Simulates the Storage service removing bytes/metadata; production tooling
+    // always uses Storage.remove(), never a direct storage.objects DELETE.
+    await db.query('delete from storage.objects where name=$1', [abandoned.path]);
+    await as('', 'service_role');
+    assert.equal(
+      (
+        await db.query('select public.finish_photo_cleanup($1::uuid[]) as removed', [
+          [abandoned.id, empty.id],
+        ])
+      ).rows[0].removed,
+      2,
+    );
+    await db.exec('reset role');
+    assert.equal(
+      (
+        await db.query('select id from public.photo_assets where id=any($1::uuid[])', [
+          [asset.id, recent.id],
+        ])
+      ).rows.length,
+      2,
+    );
     await as(bob);
     await db.query('insert into public.blocks(blocker,blocked) values($1,$2)', [bob, alice]);
     assert.equal(
