@@ -1,8 +1,10 @@
 # Development status
 
-## Phase 13 — routing dependency security (verification in progress)
+## Phase 13 — routing dependency security
 
-On October 25, 2026, rechecked current registry advisories and replaced the vulnerable routing decoder with the fixed upstream algorithm packaged for the existing CommonJS caller. Unicode/query and malformed-input regressions cover the actual installed dependency path, with provenance and license preserved. Audit now reports five high affected packages, zero moderate/critical; remaining Expo CLI Forge/Zod findings are not waived. See `DEPENDENCIES.md`. Clean-install, platform and CI verification are in progress. Earlier entries below are historical phase snapshots.
+On October 25, 2026, rechecked current registry advisories and replaced the vulnerable routing decoder with the fixed upstream algorithm packaged for the existing CommonJS caller. Unicode/query and malformed-input regressions cover the actual installed dependency path, with provenance and license preserved. Audit now reports five high affected packages, zero moderate/critical; remaining Expo CLI Forge/Zod findings are not waived. See `DEPENDENCIES.md`.
+
+Clean-install CI passed strict typing, lint, formatting, all 43 local tests, Android/iOS exports and all 15 real backend tests in [run 40134344295](https://github.com/asadabbas717/loopnest/actions/runs/40134344295), source `55087f3`. The routing fix/review phase is complete; this does not close the remaining dependency release blockers or establish native deep-link acceptance. No hosted backend change was required. Earlier entries below are historical phase snapshots.
 
 ## Phase 1 — clean foundation
 
