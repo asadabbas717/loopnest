@@ -1,5 +1,9 @@
 # Development status
 
+## Phase 13 — routing dependency security (verification in progress)
+
+On October 25, 2026, rechecked current registry advisories and replaced the vulnerable routing decoder with the fixed upstream algorithm packaged for the existing CommonJS caller. Unicode/query and malformed-input regressions cover the actual installed dependency path, with provenance and license preserved. Audit now reports five high affected packages, zero moderate/critical; remaining Expo CLI Forge/Zod findings are not waived. See `DEPENDENCIES.md`. Clean-install, platform and CI verification are in progress. Earlier entries below are historical phase snapshots.
+
 ## Phase 1 — clean foundation
 
 Previous source, native projects, Firebase client files, icons, migration documents, and old CI were removed from the working tree. Git history and an archive branch preserve the previous project. A fresh Expo/React Native application, strict TypeScript, quality scripts, MIT license, contributor guidance, and documented security/cost boundaries replace them.

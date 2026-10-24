@@ -1,5 +1,13 @@
 # Dependency review — October 21, 2026
 
+## Current review — October 25, 2026
+
+The unchanged lockfile now audits as eight affected packages (five high, three moderate), rather than the October 22 registry's 21. That initial reduction reflects updated registry advisories, not thirteen newly patched packages. The current review replaces the vulnerable routing decoder with a checked-in CommonJS adaptation of upstream `decode-uri-component@0.5.0`; the only source change is the export syntax. Its provenance, hashes and MIT license are in `mobile/vendor/decode-uri-component`. An npm override makes `query-string` consume that copy. Tests verify the installed resolution, source hash, Unicode/query semantics and bounded completion for long malformed input in an isolated process.
+
+After this change the audit reports five high affected packages, zero moderate and zero critical. These represent two underlying findings: `node-forge@1.4.0` and `zod@3.25.76`, propagated through Expo's CLI/signing dependencies. Forge's registry latest remains 1.4.0. The Zod advisory lists 4.6.6 as fixed; Expo CLI declares Zod 3 and lint tooling also consumes its v3 API, so no untested global major override is applied. These findings remain unresolved release blockers. Keep the development server on a trusted network and do not treat an audit count or successful build as an independent security review.
+
+Primary advisories: [decoder](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr), [Forge](https://github.com/advisories/GHSA-86w9-cpqp-85rv), [Zod](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). The historical snapshots below are retained as evidence of earlier reviews, not today's complete inventory. Remove the decoder compatibility copy when a tested Expo upgrade no longer needs it; review upstream fixes in the meantime.
+
 October 22 update: after compatible Expo 57.0.31/Router 57.0.29 patches and adding SDK-compatible keyboard handling, a fresh audit reports 21 affected packages (18 high, 3 moderate, no critical). `decode-uri-component`, `braces` and `node-forge` findings remain. Reanimated/Worklets are also flagged through their affected dependency paths; these are not independent new advisories. No framework-breaking downgrade or override was applied. The table below records the phase-4 analysis and must not be read as a current complete package inventory. Review the current lockfile and audit again before release.
 
 The phase-4 lockfile reports 24 npm advisories: 18 high, 6 moderate, no critical. npm counts affected dependents as well as the underlying vulnerable package, so this is not a count of 24 independent flaws. No forced Expo/React Native downgrade or untested major-version override was applied.
