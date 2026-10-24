@@ -1,5 +1,9 @@
 # Development status
 
+## Phase 14 — conversation reconnection (verification in progress)
+
+Manual Refresh now replaces the live subscription, successful subscribed catch-up clears connection warnings, and closed channels report disconnection. A scoped refresh queue serializes/coalesces reads and suppresses late results after disposal. Initial history no longer races the live reader. Backgrounding also clears the hidden retry reference alongside the draft. Queue regressions cover bursts, events during reads, recovery after failure and disposed scopes. See `CONNECTION_RELIABILITY.md` for behavior and the physical-device checklist. Full verification is pending; no hosted backend change is required.
+
 ## Phase 13 — routing dependency security
 
 On October 25, 2026, rechecked current registry advisories and replaced the vulnerable routing decoder with the fixed upstream algorithm packaged for the existing CommonJS caller. Unicode/query and malformed-input regressions cover the actual installed dependency path, with provenance and license preserved. Audit now reports five high affected packages, zero moderate/critical; remaining Expo CLI Forge/Zod findings are not waived. See `DEPENDENCIES.md`.

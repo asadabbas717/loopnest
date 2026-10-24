@@ -5,6 +5,7 @@ import { randomUUID } from 'expo-crypto';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { backend } from '../../lib/client';
 import { messageChannel } from '../../lib/message-channel';
+import { createRefreshQueue } from '../../lib/refresh-queue';
 import {
   blockUser,
   conversation,
@@ -40,9 +41,11 @@ export default function Chat() {
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<Photo | null>(null);
   const photoRef = useRef<Photo | null>(null);
+  const refreshRef = useRef<(() => void) | null>(null);
   const attempt = useRef<{ id: string; text: string; photoId?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [connectionRevision, setConnectionRevision] = useState(0);
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const { busy, error, run } = useAction();
   const actor = session?.user.id;
@@ -54,7 +57,7 @@ export default function Chat() {
       setRows([]);
       return;
     }
-    setRows(await messages(id));
+    refreshRef.current?.();
   }, [id]);
   useEffect(() => {
     const listener = AppState.addEventListener('change', (state) => {
@@ -62,6 +65,7 @@ export default function Chat() {
       if (state !== 'active') {
         setRows([]);
         setText('');
+        attempt.current = null;
         discardPhoto(photoRef.current);
         photoRef.current = null;
         setPhoto(null);
@@ -81,8 +85,8 @@ export default function Chat() {
       conversation(id)
         .then(async (current) => {
           if (!active) return;
-          setChat(current);
           if (!current) {
+            setChat(null);
             setRows([]);
             return;
           }
@@ -93,6 +97,7 @@ export default function Chat() {
             const history = await messages(id);
             if (active) setRows(history);
           }
+          if (active) setChat(current);
         })
         .catch((issue) => {
           if (active) {
@@ -119,35 +124,38 @@ export default function Chat() {
   useEffect(() => {
     if (chat?.status !== 'accepted' || !actor || !foreground) return;
     let active = true;
-    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
-    const refresh = () => {
-      if (refreshTimer) return;
-      refreshTimer = setTimeout(() => {
-        refreshTimer = undefined;
-        messages(id)
-          .then((next) => {
-            if (active) setRows(next);
-          })
-          .catch((issue) => {
-            if (active) {
-              setRows([]);
-              setLoadError(userErrorMessage(issue));
-            }
-          });
-      }, 300);
-    };
-    const channel = messageChannel(backend(), id, refresh).subscribe((status) => {
-      if (status === 'SUBSCRIBED') refresh();
-      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        if (active) setLoadError('Live updates disconnected. Refresh to reconnect.');
+    const disconnected = 'Live updates disconnected. Tap Refresh to reconnect.';
+    let connectionWarning = 'Connecting live updates…';
+    const queue = createRefreshQueue({
+      read: () => messages(id),
+      onValue: (next) => {
+        setRows(next);
+        setLoadError(connectionWarning);
+      },
+      onError: (issue) => {
+        setRows([]);
+        setLoadError(userErrorMessage(issue));
+      },
+    });
+    const channel = messageChannel(backend(), id, queue.request).subscribe((status) => {
+      if (!active) return;
+      if (status === 'SUBSCRIBED') {
+        connectionWarning = '';
+        queue.request();
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        connectionWarning = disconnected;
+        setLoadError(disconnected);
       }
     });
+    refreshRef.current = queue.request;
+    queue.request();
     return () => {
       active = false;
-      if (refreshTimer) clearTimeout(refreshTimer);
+      if (refreshRef.current === queue.request) refreshRef.current = null;
+      queue.dispose();
       void backend().removeChannel(channel);
     };
-  }, [id, actor, chat?.status, foreground]);
+  }, [id, actor, chat?.status, foreground, connectionRevision]);
   if (!session || !validProfile)
     return (
       <Page>
@@ -176,8 +184,8 @@ export default function Chat() {
         disabled={busy}
         onPress={() =>
           run(async () => {
+            setConnectionRevision((revision) => revision + 1);
             await reload();
-            setLoadError('');
           })
         }
       />
