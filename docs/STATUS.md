@@ -1,8 +1,10 @@
 # Development status
 
-## Phase 14 — conversation reconnection (verification in progress)
+## Phase 14 — conversation reconnection
 
-Manual Refresh now replaces the live subscription, successful subscribed catch-up clears connection warnings, and closed channels report disconnection. A scoped refresh queue serializes/coalesces reads and suppresses late results after disposal. Initial history no longer races the live reader. Backgrounding also clears the hidden retry reference alongside the draft. Queue regressions cover bursts, events during reads, recovery after failure and disposed scopes. See `CONNECTION_RELIABILITY.md` for behavior and the physical-device checklist. Full verification is pending; no hosted backend change is required.
+Manual Refresh now replaces the live subscription, successful subscribed catch-up clears connection warnings, and closed channels report disconnection. A scoped refresh queue serializes/coalesces reads and suppresses late results after disposal. Initial history no longer races the live reader. Backgrounding also clears the hidden retry reference alongside the draft. Queue regressions cover bursts, events during reads, recovery after failure and disposed scopes. See `CONNECTION_RELIABILITY.md` for behavior and the physical-device checklist.
+
+Strict typing, lint, formatting and all 46 local tests pass. The clean-install SDK compatibility check passes. Android/iOS exports and all 15 real backend tests passed in [run 40134753970](https://github.com/asadabbas717/loopnest/actions/runs/40134753970), source `37e3d78`, including participant-only Realtime delivery/catch-up after resubscription and idempotent send retries. Implementation and automated verification are complete; physical network interruption/recovery acceptance is pending. No hosted backend change was required. Docker and Expo were not started.
 
 ## Phase 13 — routing dependency security
 

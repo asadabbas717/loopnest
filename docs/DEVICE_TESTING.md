@@ -1,6 +1,6 @@
 # Open Loopnest on your phone with Expo Go
 
-The fresh app uses Expo SDK 57. Its current native libraries are included in Expo Go; no custom Firebase modules or paid cloud build are required. The owner confirmed that it opens on Android. Full sign-in, media and native security checks remain unverified.
+The app uses Expo SDK 57. Its current native libraries are included in Expo Go; no custom Firebase modules or paid cloud build are required. The owner has accepted the core Android account/chat/photo workflows and the phase 11 privacy fixes. See `STATUS.md` for dated evidence; iOS and standalone builds remain separate checks.
 
 1. Install Expo Go on your Android phone or iPhone. Use an Expo Go version compatible with SDK 57. Follow [Expo's environment setup](https://docs.expo.dev/get-started/set-up-your-environment/) if the installed client reports an SDK mismatch.
 2. Connect your phone and development computer to the same trusted Wi-Fi network.
@@ -18,7 +18,9 @@ Current hosted setup: the app's ignored local configuration points to the owner'
 
 ## Next device checks
 
-Accepted on the owner's Android device: password Show/Hide, revised keyboard handling, wrong-password deletion denial, correct-password account deletion, rejection of deleted-account sign-in, disappearance of the peer's shared conversation, sign-out/account switching without cross-account content, Friends unblock/navigation and restored chat history. A later screenshot confirms that private content was visible in recent apps; another shows a generic deletion warning. Those two defects and email autofill suffixing are addressed by phase 11 but still require device retesting. Offline/reconnect and physical hosted-photo deletion remain unconfirmed.
+Accepted on the owner's Android device: password Show/Hide, keyboard handling, specific wrong-password deletion warning, correct-password account deletion, rejection of deleted-account sign-in, disappearance of the peer's shared conversation, sign-out/account switching without cross-account content, Friends unblock/navigation and restored chat history. Phase 11 retesting also accepted email autofill, private recent-apps previews and blocked screenshots. Phase 12 retesting accepted new ordinary/large photo sending and receiving, plus viewing legacy photos. Physical hosted-object deletion and broader device/format coverage remain separate checks.
+
+The next requested network tests are in `CONNECTION_RELIABILITY.md`: offline/reconnect catch-up, continued live delivery after reconnection, unchanged-send retry without duplicates, and leaving/backgrounding while reads are pending. These physical-device results are not yet recorded as passed.
 
 After the keyboard follow-up, fully restart Metro with `npm run start:device -- --clear` and reload the project in Expo Go. New keyboard dependencies require a fresh bundle rather than relying on Fast Refresh. SDK 57 Expo Go includes these modules; an existing standalone development build needs rebuilding to include them. The account screen's password and DELETE fields are the primary regression case from the owner's screenshot.
 
