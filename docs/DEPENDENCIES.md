@@ -1,5 +1,11 @@
 # Dependency review — October 21, 2026
 
+## SDK 58 review — October 26, 2026
+
+Upgraded to Expo 58.0.19 / Router 58.0.26, React Native 0.88.0 and React 19.3.0 with SDK-compatible modules. The SDK 58 router no longer depends on `query-string`; the installed tree/lockfile contain neither that package nor `decode-uri-component`. Removed the local decoder dependency, override, compatibility source and its two now-obsolete package tests. No custom parser replacement is needed. React DOM is explicitly aligned to 19.3.0 to avoid the resolver selecting a peer-incompatible patch.
+
+The new audit still reports five high affected packages, zero moderate and zero critical: the Expo CLI/signing dependency paths for Forge and Zod remain unresolved. SDK alignment does not waive those release blockers. `expo-doctor` passes all 20 checks and `npm ls --all` reports no invalid peers. Native/device verification and CI evidence are tracked in `STATUS.md`. Earlier review snapshots below explain the previous SDK 57 workaround and should not be read as the current dependency graph.
+
 ## Current review — October 25, 2026
 
 The unchanged lockfile now audits as eight affected packages (five high, three moderate), rather than the October 22 registry's 21. That initial reduction reflects updated registry advisories, not thirteen newly patched packages. The current review replaces the vulnerable routing decoder with a checked-in CommonJS adaptation of upstream `decode-uri-component@0.5.0`; the only source change is the export syntax. Its provenance, hashes and MIT license are in `mobile/vendor/decode-uri-component`. An npm override makes `query-string` consume that copy. Tests verify the installed resolution, source hash, Unicode/query semantics and bounded completion for long malformed input in an isolated process.

@@ -1,5 +1,11 @@
 # Development status
 
+## Phase 15 — Expo SDK 58 upgrade (verification in progress)
+
+The owner reports both phones updated to Expo Go 58.0.2 and can no longer load the SDK 57 app. Upgraded to Expo 58.0.19 / Router 58.0.26, React Native 0.88.0, React/React DOM 19.3.0 and SDK-compatible native modules. Removed the unused decoder workaround because the new router no longer consumes its legacy parser. Regenerated the ignored Android project and verified the existing permission exclusions remain. No application API changes were needed.
+
+Strict typing, lint, formatting, all 44 local tests, SDK dependency alignment, Expo Doctor's 20 checks and Android/iOS Hermes exports pass. The two removed tests belonged exclusively to the removed decoder package. Installed dependencies report no invalid peers. The audit still has five high affected packages in the existing Forge/Zod development/signing paths; these release blockers are not waived. Full CI/backend and SDK 58 physical-device acceptance are pending. See `SDK_58_UPGRADE.md`. No hosted backend migration, billing change or APK/IPA build was performed; Docker and the live Expo server remain stopped.
+
 ## Phase 14 — conversation reconnection
 
 Manual Refresh now replaces the live subscription, successful subscribed catch-up clears connection warnings, and closed channels report disconnection. A scoped refresh queue serializes/coalesces reads and suppresses late results after disposal. Initial history no longer races the live reader. Backgrounding also clears the hidden retry reference alongside the draft. Queue regressions cover bursts, events during reads, recovery after failure and disposed scopes. See `CONNECTION_RELIABILITY.md` for behavior and the physical-device checklist.

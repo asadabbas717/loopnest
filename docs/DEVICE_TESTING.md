@@ -1,8 +1,8 @@
 # Open Loopnest on your phone with Expo Go
 
-The app uses Expo SDK 57. Its current native libraries are included in Expo Go; no custom Firebase modules or paid cloud build are required. The owner has accepted the core Android account/chat/photo workflows and the phase 11 privacy fixes. See `STATUS.md` for dated evidence; iOS and standalone builds remain separate checks.
+The app uses Expo SDK 58. Use the updated SDK 58 Expo Go client on both phones. Its current native libraries are included in Expo Go; no custom Firebase modules or paid cloud build are required. The owner accepted the core Android account/chat/photo workflows and phase 11 privacy fixes on SDK 57; repeat the smoke checks after this native-runtime upgrade. See `STATUS.md` for dated evidence; iOS and standalone builds remain separate checks.
 
-1. Install Expo Go on your Android phone or iPhone. Use an Expo Go version compatible with SDK 57. Follow [Expo's environment setup](https://docs.expo.dev/get-started/set-up-your-environment/) if the installed client reports an SDK mismatch.
+1. Install Expo Go on your Android phone or iPhone. Use an Expo Go version compatible with SDK 58. Follow [Expo's environment setup](https://docs.expo.dev/get-started/set-up-your-environment/) if the installed client reports an SDK mismatch.
 2. Connect your phone and development computer to the same trusted Wi-Fi network.
 3. In `mobile`, run `npm ci` if dependencies are missing, then `npm run start:device`.
 4. Scan the terminal QR code with Expo Go on Android, or the Camera app on iPhone. Android also supports entering the displayed `exp://...` URL manually. Keep the development server running while testing. Save code edits to reload the phone.
@@ -22,7 +22,7 @@ Accepted on the owner's Android device: password Show/Hide, keyboard handling, s
 
 The next requested network tests are in `CONNECTION_RELIABILITY.md`: offline/reconnect catch-up, continued live delivery after reconnection, unchanged-send retry without duplicates, and leaving/backgrounding while reads are pending. These physical-device results are not yet recorded as passed.
 
-After the keyboard follow-up, fully restart Metro with `npm run start:device -- --clear` and reload the project in Expo Go. New keyboard dependencies require a fresh bundle rather than relying on Fast Refresh. SDK 57 Expo Go includes these modules; an existing standalone development build needs rebuilding to include them. The account screen's password and DELETE fields are the primary regression case from the owner's screenshot.
+After the keyboard follow-up, fully restart Metro with `npm run start:device -- --clear` and reload the project in Expo Go. New keyboard dependencies require a fresh bundle rather than relying on Fast Refresh. SDK 58 Expo Go includes these modules; an existing standalone development build needs rebuilding to include them. The account screen's password and DELETE fields are the primary regression case from the owner's screenshot.
 
 1. Verify Show/Hide on sign-in, signup and recovery without losing typed characters or the cursor. Leaving the password field or backgrounding the app must hide it again. Repeat with a long password and larger system text.
 2. Open each form's bottom field, switch fields while the keyboard remains open, dismiss/reopen the keyboard and scroll to the submit button. Check signup, recovery, profile onboarding, account deletion confirmation (without submitting) and the chat composer.
@@ -34,7 +34,7 @@ Expo is stopped; restart it explicitly when phone testing is ready. These checks
 
 For phase 11, restart Metro with `npm run start:device -- --clear` and fully reload Loopnest in Expo Go. Test typing, pasting and credential autofill on email fields: no extra character should appear and the app must not silently change a legitimate address. If the keyboard's saved suggestion itself is incorrect, correct that saved entry rather than relying on the app to guess an address. Test a wrong deletion password: the form should remain filled and show the specific warning. Do not submit a correct deletion password with an account you want to keep.
 
-Open a private chat/photo, then immediately open recent apps: the Loopnest preview must not expose either. Repeat from Friends, account settings and moderation if available; test rapid background/foreground and a fresh cold launch. Screenshots/recordings of Loopnest are now intentionally blocked by native screen protection. Any old task snapshot must be replaced by a fresh protected session before judging the fix. Native signed builds must be rebuilt for the new module; SDK 57 Expo Go includes it. No screenshot/detection permission prompt is expected. On iOS, test the native inactive overlay as well; it remains unverified on an actual iPhone. If protection cannot start, the app must show only the privacy error/retry screen, not private content.
+Open a private chat/photo, then immediately open recent apps: the Loopnest preview must not expose either. Repeat from Friends, account settings and moderation if available; test rapid background/foreground and a fresh cold launch. Screenshots/recordings of Loopnest are now intentionally blocked by native screen protection. Any old task snapshot must be replaced by a fresh protected session before judging the fix. Native signed builds must be rebuilt for the new module; SDK 58 Expo Go includes it. No screenshot/detection permission prompt is expected. On iOS, test the native inactive overlay as well; it remains unverified on an actual iPhone. If protection cannot start, the app must show only the privacy error/retry screen, not private content.
 
 ## Connection troubleshooting
 
