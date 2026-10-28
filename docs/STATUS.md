@@ -1,8 +1,10 @@
 # Development status
 
-## Phase 17 — ephemeral privacy backend (verification in progress)
+## Phase 17 — ephemeral privacy backend
 
-Implemented server-stamped per-conversation expiry, backend denial at deadlines, recipient-only atomic one-time photo delivery, direct Storage denial for one-time media, expiry-aware moderation and cleanup, and thirty-day private delivery tombstones that preserve quotas/idempotency without retaining content. History now supplies server time for conservative monotonic client expiry. Existing content remains unchanged. See `EPHEMERAL_PRIVACY.md`. Database/handler regressions and full-service verification are in progress; the client controls/viewer, scheduled maintenance and visual redesign follow in separate tested phases.
+Implemented server-stamped per-conversation expiry, backend denial at deadlines, recipient-only atomic one-time photo delivery, direct Storage denial for one-time media, expiry-aware moderation and cleanup, and thirty-day private delivery tombstones that preserve quotas/idempotency without retaining content. History now supplies server time for conservative monotonic client expiry. Existing content remains unchanged. See `EPHEMERAL_PRIVACY.md`.
+
+Strict typing/lint/formatting and all 54 local tests pass. Quality/platform exports and all 16 real backend tests passed in [CI run 40689188128](https://github.com/asadabbas717/loopnest/actions/runs/40689188128), source `060eab9`. The new real-service test verifies concurrent opens have one winner, direct Storage denial, expired media removal and stale retry rejection. Initial integration used the SDK function helper, which parses image/jpeg as text; the corrected binary HTTP test passes. Deployed `open-photo` and applied the tested migration to the dedicated Free project without changing existing message deadlines. The backend phase is complete; client controls/viewer, scheduling and visual design are separate phases in progress.
 
 ## Phase 16 — dependency security fixes
 
