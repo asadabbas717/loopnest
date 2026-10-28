@@ -1,21 +1,30 @@
 import { useCallback, useState } from 'react';
-import { Text } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { Pressable, Text, View } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { configured, backend } from '../lib/client';
-import { conversations, invite, type Conversation } from '../lib/api';
+import { conversations, invite, type ConversationSummary } from '../lib/api';
 import { useSession } from '../providers/Session';
 import { userErrorMessage } from '../domain/user-errors';
 import { Auth } from '../components/Auth';
 import { Onboarding } from '../components/Onboarding';
 import { Button, Field, Heading, Loading, Notice, Page, styles, useAction } from '../components/ui';
+import { Avatar, Badge, Icon, IconButton, Reveal, visual } from '../components/visuals';
+import { fonts, palette } from '../components/theme';
 
 export default function Home() {
+  const router = useRouter();
   const { session, profile, loading, failed, refresh, accountState } = useSession();
-  const [items, setItems] = useState<Conversation[]>([]);
+  const [listed, setListed] = useState<{ actor: string; rows: ConversationSummary[] } | null>(null);
+  const [inviting, setInviting] = useState(false);
   const [listError, setListError] = useState('');
   const [handle, setHandle] = useState('');
   const { busy, error, run } = useAction();
   const userId = session?.user.id;
+  const items = listed && listed.actor === userId ? listed.rows : [];
+  const setItems = useCallback(
+    (rows: ConversationSummary[]) => setListed(userId ? { actor: userId, rows } : null),
+    [userId],
+  );
   const profileId = profile?.id;
   const reload = useCallback(async () => {
     if (!userId || !profileId) return;
@@ -26,7 +35,7 @@ export default function Home() {
       setItems([]);
       setListError(userErrorMessage(issue));
     }
-  }, [userId, profileId]);
+  }, [userId, profileId, setItems]);
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -49,7 +58,7 @@ export default function Home() {
         active = false;
         setItems([]);
       };
-    }, [userId, profileId]),
+    }, [userId, profileId, setItems]),
   );
   if (!configured)
     return (
@@ -107,59 +116,147 @@ export default function Home() {
     );
   if (!profile) return <Onboarding />;
   return (
-    <Page>
-      <Heading
-        title={`Hello, ${profile.display_name}.`}
-        subtitle={`@${profile.username} · Your conversations, by invitation.`}
-      />
-      <Button title="Account and privacy" secondary onPress={() => router.push('/account')} />
-      <Button title="Friends" secondary onPress={() => router.push('/friends')} />
-      <Field
-        label="Invite someone by username"
-        value={handle}
-        onChangeText={setHandle}
-        autoCapitalize="none"
-        maxLength={24}
-        editable={!busy}
-      />
-      <Button
-        title="Send invitation"
-        disabled={busy}
-        onPress={() =>
-          run(async () => {
-            const id = await invite(handle);
-            setHandle('');
-            router.push({ pathname: '/chat/[id]', params: { id } });
-          })
-        }
-      />
-      <Notice text={error || listError} />
-      <Button secondary title="Refresh conversations" disabled={busy} onPress={() => run(reload)} />
-      {!items.length && (
-        <Text style={[styles.copy, { marginVertical: 20 }]}>
-          No conversations yet. Share your username with someone you trust.
-        </Text>
-      )}
-      {items.map((item) => (
-        <Button
-          key={item.id}
-          secondary
-          title={`${item.status === 'pending' ? (item.recipient === userId ? 'Incoming invitation' : 'Invitation sent') : 'Conversation'} · ${new Date(item.created_at).toLocaleDateString()}`}
-          onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })}
+    <Page dock="chats">
+      <View style={[visual.between, { marginBottom: 24 }]}>
+        <View style={visual.row}>
+          <Avatar name={profile.display_name} size={42} self />
+          <View>
+            <Text style={visual.eyebrow}>YOUR SPACE</Text>
+            <Text style={{ color: palette.ink, fontFamily: fonts.medium, fontSize: 15 }}>
+              {profile.display_name}
+            </Text>
+          </View>
+        </View>
+        <IconButton
+          icon="plus"
+          label={inviting ? 'Close invitation form' : 'Invite someone'}
+          onPress={() => setInviting((value) => !value)}
         />
-      ))}
-      <Button
-        secondary
-        title="Sign out"
-        disabled={busy}
-        onPress={() =>
-          run(async () => {
-            const { error: issue } = await backend().auth.signOut();
-            if (issue) throw issue;
-            setItems([]);
-          })
-        }
+      </View>
+      <Heading
+        title={'Your inner\ncircle.'}
+        subtitle="Good conversations start with people you choose."
       />
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: '#13251F', borderColor: '#304735', padding: 17, marginBottom: 28 },
+        ]}
+      >
+        <View style={visual.between}>
+          <View style={visual.row}>
+            <Icon name="shield" color={palette.accent} size={18} />
+            <Text style={{ fontFamily: fonts.medium, color: palette.ink, fontSize: 13 }}>
+              A little space. Just for you.
+            </Text>
+          </View>
+          <Icon name="arrow-up-right" size={15} color={palette.accent} />
+        </View>
+        <Text style={visual.small}>Invitation-only chats. No ads. No analytics.</Text>
+      </View>
+      {inviting && (
+        <Reveal>
+          <View style={styles.card}>
+            <Text style={[styles.label, { fontSize: 18 }]}>Bring someone closer</Text>
+            <Text style={visual.small}>
+              Your username is @{profile.username}. Invite a friend by their exact username.
+            </Text>
+            <Field
+              label="Invite someone by username"
+              value={handle}
+              onChangeText={setHandle}
+              autoCapitalize="none"
+              maxLength={24}
+              editable={!busy}
+            />
+            <Button
+              title="Send invitation"
+              icon="arrow-up-right"
+              disabled={busy}
+              onPress={() =>
+                run(async () => {
+                  const id = await invite(handle);
+                  setHandle('');
+                  router.push({ pathname: '/chat/[id]', params: { id } });
+                })
+              }
+            />
+          </View>
+        </Reveal>
+      )}
+      <Notice text={error || listError} />
+      <View style={[visual.between, { marginBottom: 18 }]}>
+        <View style={visual.row}>
+          <Text style={visual.section}>CONVERSATIONS</Text>
+          <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: palette.accent }}>
+            {items.length}
+          </Text>
+        </View>
+        <IconButton
+          icon="refresh-cw"
+          label="Refresh conversations"
+          disabled={busy}
+          onPress={() => run(reload)}
+        />
+      </View>
+      {!items.length && (
+        <View style={[styles.card, { alignItems: 'center', paddingVertical: 36 }]}>
+          <Icon name="message-circle" color={palette.cyan} size={36} />
+          <Text style={[styles.label, { fontSize: 20, marginTop: 8 }]}>
+            Your next good conversation
+          </Text>
+          <Text style={[styles.copy, { textAlign: 'center' }]}>
+            Share @{profile.username} with someone you trust, or send your first invitation.
+          </Text>
+          <Button title="Invite a friend" icon="plus" onPress={() => setInviting(true)} />
+        </View>
+      )}
+      {items.map((item, index) => (
+        <Reveal key={item.id} delay={index * 35}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open conversation with ${item.peer_display_name}`}
+            onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })}
+            style={({ pressed }) => [
+              styles.card,
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 14,
+                padding: 17,
+                opacity: pressed ? 0.65 : 1,
+              },
+            ]}
+          >
+            <Avatar name={item.peer_display_name} />
+            <View style={{ flex: 1, gap: 5 }}>
+              <Text
+                numberOfLines={1}
+                style={{ color: palette.ink, fontFamily: fonts.semibold, fontSize: 17 }}
+              >
+                {item.peer_display_name}
+              </Text>
+              <Text style={visual.small}>
+                {item.status === 'pending'
+                  ? item.recipient === userId
+                    ? 'Invitation waiting for you'
+                    : 'Invitation sent'
+                  : item.peer_username
+                    ? `@${item.peer_username}`
+                    : 'Open conversation'}
+              </Text>
+            </View>
+            {item.retention_seconds ? (
+              <Icon name="clock" size={15} color={palette.accent} />
+            ) : (
+              <Icon name="chevron-right" size={18} />
+            )}
+          </Pressable>
+        </Reveal>
+      ))}
+      <View style={{ marginTop: 12, alignItems: 'center' }}>
+        <Badge text="YOUR PEOPLE. YOUR PACE." icon="heart" />
+      </View>
     </Page>
   );
 }

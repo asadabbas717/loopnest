@@ -1,5 +1,11 @@
 # Development status
 
+## Phase 18 — cinematic interface and ephemeral controls (verification in progress)
+
+Implemented the dark graphite/lime visual system, bundled typography, avatars, participant-name conversation cards, shared navigation dock, reduced-motion-aware transitions, retention controls and a memory-only one-time photo viewer. Native capture protection remains outside navigation and session changes. The viewer closes on background/navigation and respects the earlier of sixty seconds and its server message deadline. A follow-up migration adds the delivery deadline without changing existing content. See `CINEMATIC_UI.md` for behavior and the required device checklist.
+
+Local strict typing/lint and 58 tests pass; Android/iOS Hermes exports and Android native generation succeeded before the final system-UI alignment. Full clean-install CI, final dependency checks, deadline deployment and physical-device acceptance are pending. This entry is not a claim of device capture/recording acceptance.
+
 ## Phase 17 — ephemeral privacy backend
 
 Implemented server-stamped per-conversation expiry, backend denial at deadlines, recipient-only atomic one-time photo delivery, direct Storage denial for one-time media, expiry-aware moderation and cleanup, and thirty-day private delivery tombstones that preserve quotas/idempotency without retaining content. History now supplies server time for conservative monotonic client expiry. Existing content remains unchanged. See `EPHEMERAL_PRIVACY.md`.

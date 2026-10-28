@@ -7,43 +7,192 @@ import {
   Text,
   TextInput,
   View,
+  Keyboard,
   type TextInputProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { userErrorMessage } from '../domain/user-errors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { usePathname, useRouter } from 'expo-router';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { fonts, palette } from './theme';
+import { Icon, IconButton, Logo, Reveal, type IconName } from './visuals';
+export { palette } from './theme';
 
-export const palette = {
-  ink: '#162D2B',
-  muted: '#536D67',
-  paper: '#F5F7F1',
-  accent: '#145E4B',
-  line: '#D1DFD5',
-  danger: '#A32938',
-};
-export function Page({ children }: PropsWithChildren) {
+export function Page({
+  children,
+  dock,
+}: PropsWithChildren<{ dock?: 'chats' | 'friends' | 'account' }>) {
+  const router = useRouter();
+  const path = usePathname();
+  const [keyboard, setKeyboard] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboard(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboard(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   return (
-    <SafeAreaView style={styles.page} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.page} edges={['top', 'bottom', 'left', 'right']}>
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <LinearGradient
+          colors={['#102123', '#080C11', '#0C1119']}
+          locations={[0, 0.48, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            top: 65,
+            right: -125,
+            width: 290,
+            height: 290,
+            borderRadius: 145,
+            borderWidth: 1,
+            borderColor: '#1D363A',
+            opacity: 0.65,
+          }}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            top: 100,
+            right: -90,
+            width: 220,
+            height: 220,
+            borderRadius: 110,
+            borderWidth: 1,
+            borderColor: '#1D363A',
+            opacity: 0.5,
+          }}
+        />
+      </View>
+      <View style={styles.brandRow}>
+        {path !== '/' ? (
+          <IconButton
+            icon="arrow-left"
+            label="Go back"
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+          />
+        ) : (
+          <Logo />
+        )}
+        <Text
+          style={{
+            fontFamily: fonts.semibold,
+            color: palette.ink,
+            fontSize: 23,
+            letterSpacing: -1,
+            flex: 1,
+          }}
+        >
+          loopnest<Text style={{ color: palette.accent }}>.</Text>
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Icon name="lock" size={11} color={palette.accent} />
+          <Text
+            style={{ color: palette.muted, fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1 }}
+          >
+            INVITE ONLY
+          </Text>
+        </View>
+      </View>
       <KeyboardAwareScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.body}
+        contentContainerStyle={[styles.body, dock && { paddingBottom: 115 }]}
         bottomOffset={24}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
         {children}
       </KeyboardAwareScrollView>
+      {dock && !keyboard && (
+        <View style={styles.dock}>
+          {(
+            [
+              { key: 'chats', icon: 'message-circle', label: 'Chats', href: '/' },
+              { key: 'friends', icon: 'users', label: 'Friends', href: '/friends' },
+              { key: 'account', icon: 'sliders', label: 'You', href: '/account' },
+            ] as const
+          ).map((item) => (
+            <Pressable
+              key={item.key}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
+              accessibilityState={{ selected: dock === item.key }}
+              onPress={() => {
+                if (dock !== item.key) router.replace(item.href);
+              }}
+              style={({ pressed }) => ({
+                flex: 1,
+                minHeight: 52,
+                borderRadius: 17,
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+                backgroundColor: dock === item.key ? '#26381E' : 'transparent',
+                opacity: pressed ? 0.6 : 1,
+              })}
+            >
+              <Icon
+                name={item.icon}
+                size={20}
+                color={dock === item.key ? palette.accent : palette.muted}
+              />
+              <Text
+                style={{
+                  fontFamily: fonts.medium,
+                  color: dock === item.key ? palette.accent : palette.muted,
+                  fontSize: 11,
+                }}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
-export function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
+export function Heading({
+  title,
+  subtitle,
+  eyebrow,
+}: {
+  title: string;
+  subtitle?: string;
+  eyebrow?: string;
+}) {
   return (
-    <View style={{ gap: 10, marginBottom: 24 }}>
-      <Text accessibilityRole="header" style={styles.title}>
-        {title}
-      </Text>
-      {subtitle && <Text style={styles.copy}>{subtitle}</Text>}
-    </View>
+    <Reveal>
+      <View style={{ gap: 10, marginBottom: 28, marginTop: 8 }}>
+        {eyebrow && (
+          <Text
+            style={{
+              fontFamily: fonts.mono,
+              fontSize: 10,
+              color: palette.accent,
+              letterSpacing: 2,
+            }}
+          >
+            {eyebrow}
+          </Text>
+        )}
+        <Text accessibilityRole="header" style={styles.title}>
+          {title}
+        </Text>
+        {subtitle && <Text style={styles.copy}>{subtitle}</Text>}
+      </View>
+    </Reveal>
   );
 }
 export function Button({
@@ -51,30 +200,53 @@ export function Button({
   onPress,
   disabled = false,
   secondary = false,
+  icon,
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
   secondary?: boolean;
+  icon?: IconName;
 }) {
+  const scale = useSharedValue(1);
+  const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      onPress={onPress}
-      disabled={disabled}
-      style={({ pressed }) => [
-        styles.button,
-        secondary && { backgroundColor: '#E3EDE3' },
-        (disabled || pressed) && { opacity: 0.6 },
-      ]}
-    >
-      <Text
-        style={{ fontSize: 16, fontWeight: '600', color: secondary ? palette.accent : 'white' }}
+    <Animated.View style={animated}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled }}
+        onPress={onPress}
+        disabled={disabled}
+        onPressIn={() => {
+          scale.set(withTiming(0.975, { duration: 100, reduceMotion: ReduceMotion.System }));
+        }}
+        onPressOut={() => {
+          scale.set(withTiming(1, { duration: 150, reduceMotion: ReduceMotion.System }));
+        }}
+        style={({ pressed }) => [
+          styles.button,
+          secondary && {
+            backgroundColor: palette.surface,
+            borderWidth: 1,
+            borderColor: palette.line,
+          },
+          (disabled || pressed) && { opacity: 0.6 },
+        ]}
       >
-        {title}
-      </Text>
-    </Pressable>
+        {icon && <Icon name={icon} size={18} color={secondary ? palette.ink : palette.accentInk} />}
+        <Text
+          style={{
+            fontSize: 15,
+            fontFamily: fonts.semibold,
+            color: secondary ? palette.ink : palette.accentInk,
+            flexShrink: 1,
+            textAlign: 'center',
+          }}
+        >
+          {title}
+        </Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 export function Field({
@@ -83,6 +255,7 @@ export function Field({
   ...props
 }: TextInputProps & { label: string }) {
   const [revealed, setRevealed] = useState(false);
+  const [focused, setFocused] = useState(false);
   useEffect(() => {
     if (!secureTextEntry) return;
     const subscription = AppState.addEventListener('change', (state) => {
@@ -93,20 +266,34 @@ export function Field({
   return (
     <View style={{ gap: 8, marginBottom: 18 }}>
       <Text style={styles.label}>{label}</Text>
-      <View style={secureTextEntry ? styles.passwordRow : undefined}>
+      <View
+        style={
+          secureTextEntry
+            ? [styles.passwordRow, focused && { borderColor: palette.accent }]
+            : undefined
+        }
+      >
         <TextInput
           {...props}
           secureTextEntry={secureTextEntry && !revealed}
           autoCorrect={secureTextEntry ? false : props.autoCorrect}
           spellCheck={secureTextEntry ? false : props.spellCheck}
           onBlur={(event) => {
+            setFocused(false);
             setRevealed(false);
             props.onBlur?.(event);
           }}
+          onFocus={(event) => {
+            setFocused(true);
+            props.onFocus?.(event);
+          }}
+          selectionColor={palette.accent}
+          keyboardAppearance="dark"
           accessibilityLabel={label}
           placeholderTextColor={palette.muted}
           style={[
             styles.input,
+            focused && !secureTextEntry && { borderColor: palette.accent },
             secureTextEntry && styles.passwordInput,
             props.multiline && { minHeight: 90, textAlignVertical: 'top' },
             props.style,
@@ -124,7 +311,7 @@ export function Field({
               (pressed || props.editable === false) && { opacity: 0.6 },
             ]}
           >
-            <Text style={styles.passwordToggleText}>{revealed ? 'Hide' : 'Show'}</Text>
+            <Icon name={revealed ? 'eye-off' : 'eye'} color={palette.muted} size={19} />
           </Pressable>
         )}
       </View>
@@ -167,27 +354,63 @@ export function useAction() {
 }
 export const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: palette.paper },
-  body: { padding: 24, paddingBottom: 48 },
-  title: { fontSize: 32, fontWeight: '700', color: palette.ink, letterSpacing: -0.8 },
-  copy: { fontSize: 16, lineHeight: 25, color: palette.muted },
-  label: { fontWeight: '600', color: palette.ink, fontSize: 15 },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+  dock: {
+    position: 'absolute',
+    bottom: 18,
+    left: 22,
+    right: 22,
+    flexDirection: 'row',
+    gap: 6,
+    padding: 7,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#34443F',
+    backgroundColor: '#101B1C',
+    boxShadow: '0 12px 28px rgba(0,0,0,.35)',
+  },
+  body: {
+    paddingHorizontal: 24,
+    paddingTop: 6,
+    paddingBottom: 48,
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+  },
+  title: {
+    fontSize: 36,
+    fontFamily: fonts.bold,
+    color: palette.ink,
+    letterSpacing: -1.5,
+    lineHeight: 43,
+  },
+  copy: { fontSize: 15, fontFamily: fonts.regular, lineHeight: 24, color: palette.muted },
+  label: { fontFamily: fonts.medium, color: palette.ink, fontSize: 13, letterSpacing: 0.2 },
   input: {
     borderWidth: 1,
     borderColor: palette.line,
-    backgroundColor: 'white',
-    padding: 14,
-    borderRadius: 14,
-    minHeight: 52,
+    backgroundColor: palette.surface,
+    padding: 17,
+    borderRadius: 17,
+    minHeight: 56,
     color: palette.ink,
     fontSize: 16,
+    fontFamily: fonts.regular,
   },
   passwordRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: palette.line,
-    backgroundColor: 'white',
-    borderRadius: 14,
+    backgroundColor: palette.surface,
+    borderRadius: 17,
   },
   passwordInput: { flex: 1, minWidth: 0, borderWidth: 0, backgroundColor: 'transparent' },
   passwordToggle: {
@@ -199,21 +422,34 @@ export const styles = StyleSheet.create({
   },
   passwordToggleText: { color: palette.accent, fontWeight: '600', fontSize: 15 },
   button: {
-    minHeight: 52,
-    padding: 15,
-    borderRadius: 14,
+    minHeight: 55,
+    padding: 16,
+    borderRadius: 17,
+    flexDirection: 'row',
+    gap: 10,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: palette.accent,
     marginBottom: 12,
   },
-  notice: { color: palette.danger, lineHeight: 23, marginBottom: 16 },
+  notice: {
+    color: palette.danger,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 21,
+    marginBottom: 16,
+    padding: 14,
+    backgroundColor: '#291C21',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#4C2E38',
+  },
   card: {
     padding: 18,
     borderWidth: 1,
     borderColor: palette.line,
-    backgroundColor: 'white',
-    borderRadius: 18,
+    backgroundColor: palette.surface,
+    borderRadius: 22,
     marginBottom: 14,
     gap: 12,
   },

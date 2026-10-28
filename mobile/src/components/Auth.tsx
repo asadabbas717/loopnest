@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { backend } from '../lib/client';
 import { credentials } from '../domain/validation';
 import { Recovery } from './Recovery';
 import { Button, Field, Heading, Notice, Page, styles, useAction } from './ui';
+import { Badge, Logo, visual } from './visuals';
+import { palette } from './theme';
 
 export function Auth() {
   const [register, setRegister] = useState(false);
@@ -16,13 +18,35 @@ export function Auth() {
   if (recovering) return <Recovery onClose={() => setRecovering(false)} />;
   return (
     <Page>
+      <View
+        style={{
+          marginTop: 15,
+          marginBottom: 30,
+          width: 84,
+          height: 84,
+          borderRadius: 28,
+          backgroundColor: '#162824',
+          borderWidth: 1,
+          borderColor: '#35523B',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Logo size={50} />
+      </View>
       <Heading
-        title="A little closer."
-        subtitle="Welcome to Loopnest. Conversations start with an invitation."
+        eyebrow="LESS NOISE. MORE CONNECTION."
+        title={register ? 'Find your\npeople.' : 'Closer.\nOn your terms.'}
+        subtitle={
+          register
+            ? 'Create a little space for the people who matter.'
+            : 'Welcome back to your corner of the internet.'
+        }
       />
-      <Text style={[styles.copy, { marginBottom: 24 }]}>
-        Messages are private to accepted participants. This version is not end-to-end encrypted.
-      </Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 26 }}>
+        <Badge text="INVITATION ONLY" accent />
+        <Badge text="NO TRACKING" icon="eye-off" />
+      </View>
       <Field
         label="Email"
         defaultValue={email}
@@ -78,6 +102,7 @@ export function Auth() {
           />
           <Button
             title={busy ? 'Please wait…' : register ? 'Create account' : 'Sign in'}
+            icon="arrow-right"
             disabled={busy}
             onPress={() =>
               run(async () => {
@@ -94,6 +119,10 @@ export function Auth() {
         </>
       )}
       <Notice text={error} />
+      <Text style={[visual.small, { textAlign: 'center', marginTop: 20, color: palette.dim }]}>
+        Chats are access-controlled, not end-to-end encrypted. Only accepted participants can access
+        your conversations.
+      </Text>
       {!register && !verification && (
         <Button
           title="Forgot your password?"

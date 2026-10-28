@@ -22,7 +22,13 @@ Deno.serve(
       if (error?.code === "42501") return null;
       if (error || typeof data?.path !== "string")
         throw new Error("Claim unavailable");
-      return data.path as string;
+      if (typeof data.server_time !== "string")
+        throw new Error("Deadline unavailable");
+      return {
+        path: data.path as string,
+        expires_at: data.expires_at as string | null,
+        server_time: data.server_time as string,
+      };
     },
     async read(path) {
       const { data, error } = await admin.storage

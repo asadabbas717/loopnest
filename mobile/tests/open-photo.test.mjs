@@ -24,7 +24,7 @@ test('one-time delivery authenticates, claims once and sends non-cacheable binar
       steps.push('claim');
       if (claimed) return null;
       claimed = true;
-      return 'server-only-path';
+      return { path: 'server-only-path', expires_at: null, server_time: '2026-10-28T10:00:00Z' };
     },
     read: async (path) => {
       assert.equal(path, 'server-only-path');
@@ -50,7 +50,7 @@ test('one-time delivery bounds input, denies browser/anonymous access, and fails
     actor: async () => 'recipient',
     claim: async () => {
       claims++;
-      return 'private-path';
+      return { path: 'private-path', expires_at: null, server_time: '2026-10-28T10:00:00Z' };
     },
     read: async () => {
       throw new Error('secret credential or path must not be reflected');
@@ -69,4 +69,22 @@ test('one-time delivery bounds input, denies browser/anonymous access, and fails
   assert.equal(failed.status, 503);
   assert.deepEqual(await failed.json(), { code: 'photo_delivery_unavailable' });
   assert.equal(claims, 1);
+});
+
+test('one-time delivery carries a bounded server deadline and refuses already expired delivery', async () => {
+  const make = (expires) =>
+    openPhotoHandler({
+      actor: async () => 'recipient',
+      claim: async () => ({
+        path: 'private-path',
+        expires_at: expires,
+        server_time: '2026-10-28T10:00:00Z',
+      }),
+      read: async () => new Uint8Array([255, 216, 255, 217]),
+    });
+  const near = await make('2026-10-28T10:00:02Z')(request());
+  assert.equal(near.status, 200);
+  assert.ok(Number(near.headers.get('x-photo-view-ms')) > 0);
+  assert.ok(Number(near.headers.get('x-photo-view-ms')) <= 2000);
+  assert.equal((await make('2026-10-28T09:59:59Z')(request())).status, 404);
 });

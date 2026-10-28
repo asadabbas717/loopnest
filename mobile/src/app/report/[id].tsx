@@ -18,7 +18,7 @@ export default function Report() {
         subtitle={
           submitted
             ? 'A project moderator can review it. Reporting does not promise immediate action.'
-            : 'The selected message and its photo will be shared with authorized project moderators. The rest of your conversation stays private.'
+            : 'The selected text and any regular photo will be shared with authorized moderators. One-time photos are excluded, and expired content cannot be newly shared. The rest of your conversation stays private.'
         }
       />
       {!submitted && (

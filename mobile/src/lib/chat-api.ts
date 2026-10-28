@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { displayName, messageText, username, uuid } from '../domain/validation.ts';
 import { createFriendsApi } from './friends-api.ts';
 import { UserFacingError } from '../domain/user-errors.ts';
+import { expirationDeadline } from '../domain/ephemeral.ts';
 export type Profile = { id: string; username: string; display_name: string };
 export type Conversation = {
   id: string;
@@ -22,6 +23,10 @@ export type Message = {
   view_once: boolean;
   expires_monotonic?: number;
 };
+export type ConversationSummary = Conversation & {
+  peer_display_name: string;
+  peer_username: string;
+};
 
 export function createChatApi(backend: () => SupabaseClient) {
   async function ownProfile(id: string): Promise<Profile | null> {
@@ -40,7 +45,11 @@ export function createChatApi(backend: () => SupabaseClient) {
     if (error?.code === '23505') throw new UserFacingError('username_taken');
     if (error) throw error;
   }
-  async function conversations(): Promise<Conversation[]> {
+  async function conversations(): Promise<ConversationSummary[]> {
+    const sessionResult = await backend().auth.getSession();
+    if (sessionResult.error) throw sessionResult.error;
+    const session = sessionResult.data.session;
+    if (!session) return [];
     const { data, error } = await backend()
       .from('conversations')
       .select('id,initiator,recipient,status,created_at,retention_seconds,retention_changed_at')
@@ -48,7 +57,22 @@ export function createChatApi(backend: () => SupabaseClient) {
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) throw error;
-    return data;
+    const rows = data as Conversation[];
+    if (!rows.length) return [];
+    const peerIds = rows.map((row) =>
+      row.initiator === session.user.id ? row.recipient : row.initiator,
+    );
+    const profiles = await backend()
+      .from('profiles')
+      .select('id,username,display_name')
+      .in('id', peerIds);
+    if (profiles.error) throw profiles.error;
+    const names = new Map((profiles.data as Profile[]).map((peer) => [peer.id, peer]));
+    return rows.map((row, index) => ({
+      ...row,
+      peer_display_name: names.get(peerIds[index]!)?.display_name ?? 'Unavailable contact',
+      peer_username: names.get(peerIds[index]!)?.username ?? '',
+    }));
   }
   async function conversation(id: string): Promise<Conversation | null> {
     const { data, error } = await backend()
@@ -92,16 +116,12 @@ export function createChatApi(backend: () => SupabaseClient) {
     });
     if (error) throw error;
     const received = performance.now();
-    return (data as (Message & { server_time: string })[]).map((row) => ({
-      ...row,
-      expires_monotonic: row.expires_at
-        ? received +
-          Math.max(
-            0,
-            Date.parse(row.expires_at) - Date.parse(row.server_time) - (received - started),
-          )
-        : undefined,
-    }));
+    return (data as (Message & { server_time: string })[])
+      .map((row) => ({
+        ...row,
+        expires_monotonic: expirationDeadline(row.expires_at, row.server_time, started, received),
+      }))
+      .filter((row) => row.expires_monotonic === undefined || row.expires_monotonic > received);
   }
   async function send(
     id: string,
@@ -124,6 +144,11 @@ export function createChatApi(backend: () => SupabaseClient) {
   }
 
   async function setRetention(id: string, seconds: number | null, actor: string) {
+    if (
+      seconds !== null &&
+      (!Number.isInteger(seconds) || seconds < 3600 || seconds > 2592000 || seconds % 3600 !== 0)
+    )
+      throw new Error('Invalid disappearing duration');
     const { error } = await backend().rpc('set_message_retention', {
       cid: uuid(id),
       seconds,

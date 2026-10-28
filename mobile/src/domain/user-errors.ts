@@ -1,5 +1,9 @@
 // Only approved messages reach the UI; never render arbitrary server diagnostics.
 export const errorMessages = {
+  one_time_unavailable:
+    'This one-time photo is no longer available. It may have been opened or expired.',
+  photo_delivery_unavailable:
+    'The photo could not be delivered. For privacy, a claimed one-time opening cannot be retried.',
   invalid_photo:
     'This photo could not be validated. Choose another image no larger than 1 MB after resizing.',
   photo_unavailable: 'This upload reservation is unavailable. Choose the photo again to retry.',
@@ -42,6 +46,11 @@ const authMessages: Record<string, string> = {
   bad_jwt: errorMessages.auth_required,
 };
 const databaseMessages: Record<string, string> = {
+  'Message expired':
+    'This message has expired and cannot be resent using the old attempt. Write a new message if you want to send it again.',
+  'Invalid disappearing duration': 'Choose whole hours or days, from 1 hour up to 30 days.',
+  'Setting limit reached':
+    'Wait 10 seconds before changing the disappearing-message setting again.',
   'Create your profile first': 'Create your profile before sending invitations.',
   'Message identifier conflict':
     'This send attempt conflicts with an earlier message. Reopen the conversation and try again.',

@@ -6,6 +6,7 @@ import { createFriendsApi, type FriendConnection, type FriendKind } from '../lib
 import { userErrorMessage } from '../domain/user-errors';
 import { useSession } from '../providers/Session';
 import { Button, Heading, Loading, Notice, Page, styles, useAction } from '../components/ui';
+import { Avatar, Icon, visual } from '../components/visuals';
 
 const api = createFriendsApi(backend);
 export default function Friends() {
@@ -84,30 +85,37 @@ export default function Friends() {
     });
   };
   return (
-    <Page>
+    <Page dock="friends">
       <Heading
-        title="Friends"
-        subtitle="Active friends are accepted connections available for chat. This does not show online status."
+        eyebrow="YOUR INNER CIRCLE"
+        title="Your people."
+        subtitle="A familiar name. A good conversation."
       />
-      <Button
-        title="Active friends"
-        secondary={kind !== 'active'}
-        disabled={busy || fetching}
-        onPress={() => {
-          clearError();
-          setKind('active');
-        }}
-      />
-      <Button
-        title="Blocked users"
-        secondary={kind !== 'blocked'}
-        disabled={busy || fetching}
-        onPress={() => {
-          clearError();
-          setKind('blocked');
-        }}
-      />
-      <Text style={[styles.copy, { marginBottom: 18 }]}>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1 }}>
+          <Button
+            title="Active friends"
+            secondary={kind !== 'active'}
+            disabled={busy || fetching}
+            onPress={() => {
+              clearError();
+              setKind('active');
+            }}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            title="Blocked users"
+            secondary={kind !== 'blocked'}
+            disabled={busy || fetching}
+            onPress={() => {
+              clearError();
+              setKind('blocked');
+            }}
+          />
+        </View>
+      </View>
+      <Text style={[visual.small, { marginBottom: 18 }]}>
         {kind === 'blocked'
           ? 'Only people you blocked appear here. Unblocking removes your block; the other person may still restrict contact.'
           : 'Open an existing conversation, or invite a new friend by username from the home screen.'}
@@ -132,11 +140,18 @@ export default function Friends() {
       )}
       {rows.map((peer) => (
         <View key={peer.user_id} style={styles.card}>
-          <Text style={styles.label}>{peer.display_name}</Text>
-          <Text style={styles.copy}>@{peer.username}</Text>
+          <View style={visual.row}>
+            <Avatar name={peer.display_name} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={[styles.label, { fontSize: 18 }]}>{peer.display_name}</Text>
+              <Text style={visual.small}>@{peer.username}</Text>
+            </View>
+            <Icon name={kind === 'blocked' ? 'slash' : 'user-check'} />
+          </View>
           {kind === 'active' && (
             <Button
               title="Open conversation"
+              icon="message-circle"
               disabled={busy || fetching}
               onPress={() =>
                 router.push({ pathname: '/chat/[id]', params: { id: peer.conversation_id } })

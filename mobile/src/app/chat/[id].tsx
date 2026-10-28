@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Text, View } from 'react-native';
+import { Alert, AppState, Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { randomUUID } from 'expo-crypto';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -13,12 +13,17 @@ import {
   peerProfile,
   respond,
   send,
+  setRetention,
   type Conversation,
   type Message,
 } from '../../lib/api';
 import { choosePhoto, discardPhoto, uploadPhoto, type Photo } from '../../lib/photos';
 import { useSession } from '../../providers/Session';
 import { PrivatePhoto } from '../../components/PrivatePhoto';
+import { OneTimeCard } from '../../components/OneTimeCard';
+import { RetentionSettings, retentionLabel } from '../../components/RetentionSettings';
+import { Avatar, Badge, Icon, IconButton, visual } from '../../components/visuals';
+import { fonts, palette } from '../../components/theme';
 import { userErrorMessage } from '../../domain/user-errors';
 import {
   Button,
@@ -37,6 +42,9 @@ export default function Chat() {
   const { session, profile } = useSession();
   const [chat, setChat] = useState<Conversation | null>(null);
   const [name, setName] = useState('Conversation');
+  const [handle, setHandle] = useState('');
+  const [tools, setTools] = useState(false);
+  const [oneTime, setOneTime] = useState(false);
   const [rows, setRows] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<Photo | null>(null);
@@ -69,6 +77,7 @@ export default function Chat() {
         discardPhoto(photoRef.current);
         photoRef.current = null;
         setPhoto(null);
+        setOneTime(false);
       }
     });
     return () => listener.remove();
@@ -93,6 +102,7 @@ export default function Chat() {
           const other = current.initiator === actor ? current.recipient : current.initiator;
           const peer = await peerProfile(other);
           if (active) setName(peer?.display_name ?? 'Conversation');
+          if (active) setHandle(peer?.username ?? '');
           if (current.status === 'accepted') {
             const history = await messages(id);
             if (active) setRows(history);
@@ -118,9 +128,34 @@ export default function Chat() {
         photoRef.current = null;
         setPhoto(null);
         attempt.current = null;
+        setOneTime(false);
       };
     }, [id, actor, validProfile]),
   );
+  useEffect(() => {
+    if (!foreground) return;
+    const deadlines = rows.flatMap((message) =>
+      message.expires_monotonic === undefined ? [] : [message.expires_monotonic],
+    );
+    if (!deadlines.length) return;
+    const next = Math.min(...deadlines);
+    let timer: ReturnType<typeof setTimeout>;
+    const expire = () => {
+      if (performance.now() < next) {
+        timer = setTimeout(expire, Math.min(60000, next - performance.now()));
+        return;
+      }
+      setRows((current) =>
+        current.filter(
+          (message) =>
+            message.expires_monotonic === undefined ||
+            message.expires_monotonic > performance.now(),
+        ),
+      );
+    };
+    timer = setTimeout(expire, Math.max(0, Math.min(60000, next - performance.now())));
+    return () => clearTimeout(timer);
+  }, [foreground, rows]);
   useEffect(() => {
     if (chat?.status !== 'accepted' || !actor || !foreground) return;
     let active = true;
@@ -137,16 +172,30 @@ export default function Chat() {
         setLoadError(userErrorMessage(issue));
       },
     });
-    const channel = messageChannel(backend(), id, queue.request).subscribe((status) => {
-      if (!active) return;
-      if (status === 'SUBSCRIBED') {
-        connectionWarning = '';
-        queue.request();
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        connectionWarning = disconnected;
-        setLoadError(disconnected);
-      }
-    });
+    const channel = messageChannel(backend(), id, queue.request)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `id=eq.${id}` },
+        () => {
+          conversation(id)
+            .then((current) => {
+              if (active) setChat(current);
+            })
+            .catch((issue) => {
+              if (active) setLoadError(userErrorMessage(issue));
+            });
+        },
+      )
+      .subscribe((status) => {
+        if (!active) return;
+        if (status === 'SUBSCRIBED') {
+          connectionWarning = '';
+          queue.request();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          connectionWarning = disconnected;
+          setLoadError(disconnected);
+        }
+      });
     refreshRef.current = queue.request;
     queue.request();
     return () => {
@@ -176,19 +225,66 @@ export default function Chat() {
     );
   return (
     <Page>
-      <Heading title={name} subtitle="Invitation-only · Not end-to-end encrypted" />
+      <View style={[visual.between, { marginBottom: 20 }]}>
+        <View style={[visual.row, { flex: 1 }]}>
+          <Avatar name={name} />
+          <View style={{ flex: 1, gap: 5 }}>
+            <Text
+              numberOfLines={1}
+              style={{ fontFamily: fonts.semibold, color: palette.ink, fontSize: 23 }}
+            >
+              {name}
+            </Text>
+            <Text style={visual.small}>
+              {handle ? `@${handle}` : 'Invitation-only conversation'}
+            </Text>
+          </View>
+        </View>
+        <IconButton
+          icon="more-horizontal"
+          label="Conversation settings"
+          onPress={() => setTools((value) => !value)}
+        />
+      </View>
+      <View style={[visual.between, { marginBottom: 20 }]}>
+        <Badge
+          text={
+            chat?.retention_seconds
+              ? `DISAPPEARS · ${retentionLabel(chat.retention_seconds).toUpperCase()}`
+              : 'SCREEN PROTECTED'
+          }
+          icon={chat?.retention_seconds ? 'clock' : 'shield'}
+          accent
+        />
+        <IconButton
+          icon="refresh-cw"
+          label="Refresh conversation"
+          disabled={busy}
+          onPress={() =>
+            run(async () => {
+              setConnectionRevision((revision) => revision + 1);
+              await reload();
+            })
+          }
+        />
+      </View>
+      <Text style={[visual.small, { marginBottom: 18 }]}>
+        Access-controlled · Not end-to-end encrypted
+      </Text>
+      {tools && chat?.status === 'accepted' && (
+        <RetentionSettings
+          seconds={chat.retention_seconds}
+          busy={busy}
+          onSave={(seconds) =>
+            run(async () => {
+              await setRetention(id, seconds, actor!);
+              await reload();
+              setTools(false);
+            })
+          }
+        />
+      )}
       <Notice text={loadError || error} />
-      <Button
-        secondary
-        title="Refresh"
-        disabled={busy}
-        onPress={() =>
-          run(async () => {
-            setConnectionRevision((revision) => revision + 1);
-            await reload();
-          })
-        }
-      />
       {!chat && <Text style={styles.copy}>This conversation is unavailable.</Text>}
       {chat?.status === 'pending' && (
         <View style={styles.card}>
@@ -253,28 +349,65 @@ export default function Chat() {
             .map((message) => (
               <View
                 key={message.id}
-                style={[styles.card, message.sender_id === actor && { backgroundColor: '#E5EEE3' }]}
+                style={[
+                  styles.card,
+                  {
+                    maxWidth: '94%',
+                    alignSelf: message.sender_id === actor ? 'flex-end' : 'flex-start',
+                    minWidth: 150,
+                    backgroundColor: message.sender_id === actor ? '#22311F' : '#14212A',
+                    borderColor: message.sender_id === actor ? '#3A4C30' : '#283A47',
+                    borderBottomRightRadius: message.sender_id === actor ? 5 : 20,
+                    borderBottomLeftRadius: message.sender_id === actor ? 20 : 5,
+                    padding: 16,
+                    gap: 9,
+                  },
+                ]}
               >
-                <Text style={styles.label}>{message.sender_id === actor ? 'You' : name}</Text>
+                <View style={visual.between}>
+                  <Text style={{ fontFamily: fonts.mono, color: palette.muted, fontSize: 10 }}>
+                    {message.sender_id === actor ? 'YOU' : name.toUpperCase()}
+                  </Text>
+                  {message.sender_id !== actor && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Report message from ${name}`}
+                      onPress={() =>
+                        router.push({ pathname: '/report/[id]', params: { id: message.id } })
+                      }
+                      style={{
+                        minWidth: 40,
+                        minHeight: 36,
+                        alignItems: 'flex-end',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Icon name="flag" size={12} />
+                    </Pressable>
+                  )}
+                </View>
                 {!!message.body && (
-                  <Text selectable style={styles.copy}>
+                  <Text
+                    selectable={!message.expires_at}
+                    style={[styles.copy, { color: palette.ink, fontSize: 16 }]}
+                  >
                     {message.body}
                   </Text>
                 )}
-                {message.photo_id && <PrivatePhoto id={message.photo_id} />}
-                {message.sender_id !== actor && (
-                  <Button
-                    title="Report message"
-                    secondary
-                    disabled={busy}
-                    onPress={() =>
-                      router.push({ pathname: '/report/[id]', params: { id: message.id } })
-                    }
-                  />
+                {message.view_once ? (
+                  <OneTimeCard id={message.photo_id} sender={message.sender_id} />
+                ) : (
+                  message.photo_id && <PrivatePhoto id={message.photo_id} />
                 )}
-                <Text style={{ color: '#536D67', fontSize: 12 }}>
-                  {new Date(message.created_at).toLocaleString()}
-                </Text>
+                <View style={visual.between}>
+                  <Text style={{ color: palette.dim, fontFamily: fonts.mono, fontSize: 9 }}>
+                    {new Date(message.created_at).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Text>
+                  {message.expires_at && <Icon name="clock" size={12} color={palette.accent} />}
+                </View>
               </View>
             ))}
           {!rows.length && (
@@ -283,7 +416,7 @@ export default function Chat() {
             </Text>
           )}
           <Field
-            label="Message"
+            label="YOUR MESSAGE"
             multiline
             value={text}
             onChangeText={(value) => {
@@ -312,6 +445,35 @@ export default function Chat() {
                   attempt.current = null;
                 }}
               />
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityLabel="Send photo as one-time view"
+                accessibilityState={{ checked: oneTime, disabled: busy }}
+                disabled={busy}
+                onPress={() => {
+                  setOneTime((value) => !value);
+                  attempt.current = null;
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  minHeight: 52,
+                  padding: 12,
+                  borderRadius: 14,
+                  backgroundColor: oneTime ? '#2A4020' : palette.raised,
+                }}
+              >
+                <Icon
+                  name={oneTime ? 'check-circle' : 'circle'}
+                  color={oneTime ? palette.accent : palette.muted}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>One-time view</Text>
+                  <Text style={visual.small}>Recipient opens once. No ordinary download.</Text>
+                </View>
+                <Icon name="eye" color={palette.accent} />
+              </Pressable>
             </View>
           )}
           <Button
@@ -330,32 +492,34 @@ export default function Chat() {
               })
             }
           />
-          <Text style={[styles.copy, { marginBottom: 16 }]}>
-            Photos are resized before upload. Only share content you have permission to share;
-            recipients can save a copy.
+          <Text style={[visual.small, { marginBottom: 16 }]}>
+            Photos are resized and stripped of submitted metadata. Share only what you have
+            permission to share.
           </Text>
           <Button
             title={busy ? 'Sending…' : 'Send message'}
+            icon="send"
             disabled={busy}
             onPress={() =>
               run(async () => {
                 if (!attempt.current) attempt.current = { id: randomUUID(), text };
                 const submission = attempt.current;
                 if (photo && !submission.photoId)
-                  submission.photoId = await uploadPhoto(id, photo, actor!);
+                  submission.photoId = await uploadPhoto(id, photo, actor!, oneTime);
                 await send(id, submission.id, submission.text, actor!, submission.photoId);
                 attempt.current = null;
                 setText('');
                 discardPhoto(photoRef.current);
                 photoRef.current = null;
                 setPhoto(null);
+                setOneTime(false);
                 await reload();
               })
             }
           />
         </>
       )}
-      {chat && (
+      {chat && tools && (
         <Button
           title="Block this person"
           secondary

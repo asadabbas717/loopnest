@@ -119,6 +119,11 @@ test(
           const reserved = await alice.client.rpc('reserve_photo', { cid }).single();
           assert.ok(reserved.error, 'cannot reserve photo before consent');
           await bob.api.respond(cid, true);
+          assert.equal(
+            (await bob.api.conversations()).find((row) => row.id === cid).peer_display_name,
+            'alice',
+            'home summaries identify the peer by display name',
+          );
         },
       );
       let photoId;
@@ -387,6 +392,10 @@ test(
           const decoded = jpegCodec.decode(new Uint8Array(await delivered.arrayBuffer()));
           assert.equal(decoded.width, 1);
           assert.match(delivered.headers.get('cache-control'), /no-store/);
+          assert.ok(
+            Number(delivered.headers.get('x-photo-view-ms')) > 0 &&
+              Number(delivered.headers.get('x-photo-view-ms')) <= 60000,
+          );
           assert.equal((await open(bob)).status, 404);
           ok(
             (

@@ -5,6 +5,8 @@ const config: ExpoConfig = {
   slug: 'loopnest',
   scheme: 'loopnest',
   version: '0.1.0',
+  userInterfaceStyle: 'dark',
+  backgroundColor: '#080C11',
   orientation: 'portrait',
   platforms: ['android', 'ios'],
   ios: {
@@ -26,6 +28,8 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    'expo-font',
+    'expo-system-ui',
     'expo-secure-store',
     'expo-image',
     [

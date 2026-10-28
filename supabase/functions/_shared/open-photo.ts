@@ -1,6 +1,13 @@
 type Dependencies = {
   actor: (token: string) => Promise<string | null>;
-  claim: (actor: string, id: string) => Promise<string | null>;
+  claim: (
+    actor: string,
+    id: string,
+  ) => Promise<{
+    path: string;
+    expires_at: string | null;
+    server_time: string;
+  } | null>;
   read: (path: string) => Promise<Uint8Array>;
 };
 export function openPhotoHandler(deps: Dependencies) {
@@ -68,9 +75,21 @@ export function openPhotoHandler(deps: Dependencies) {
         )
       )
         return failure(400, "invalid_photo");
-      const path = await deps.claim(actor, body.asset_id);
-      if (!path) return failure(404, "photo_unavailable");
-      const image = await deps.read(path);
+      const claimStarted = performance.now();
+      const asset = await deps.claim(actor, body.asset_id);
+      if (!asset) return failure(404, "photo_unavailable");
+      const image = await deps.read(asset.path);
+      const remaining = Math.floor(
+        Math.min(
+          60000,
+          asset.expires_at
+            ? Date.parse(asset.expires_at) - Date.parse(asset.server_time)
+            : 60000,
+        ) -
+          (performance.now() - claimStarted),
+      );
+      if (!Number.isFinite(remaining) || remaining <= 0)
+        return failure(404, "photo_unavailable");
       if (!image.length || image.length > 1048576)
         return failure(503, "photo_delivery_unavailable");
       return new Response(Uint8Array.from(image).buffer, {
@@ -78,6 +97,7 @@ export function openPhotoHandler(deps: Dependencies) {
           "Content-Type": "image/jpeg",
           "Cache-Control": "private, no-store, max-age=0",
           "X-Content-Type-Options": "nosniff",
+          "X-Photo-View-Ms": String(remaining),
         },
       });
     } catch {
