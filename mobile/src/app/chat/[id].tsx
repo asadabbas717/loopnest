@@ -55,6 +55,7 @@ export default function Chat() {
   const mediaWidth = Math.max(150, Math.min(380, (Math.min(width, 720) - 48) * 0.94));
   const [oneTime, setOneTime] = useState(false);
   const [rows, setRows] = useState<Message[]>([]);
+  const [historyReady, setHistoryReady] = useState(false);
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<Photo | null>(null);
   const photoRef = useRef<Photo | null>(null);
@@ -80,6 +81,7 @@ export default function Chat() {
       setHandle(peer?.username ?? '');
     }
     if (!current || current.status !== 'accepted') {
+      setHistoryReady(false);
       setRows([]);
       return;
     }
@@ -89,6 +91,7 @@ export default function Chat() {
     const listener = AppState.addEventListener('change', (state) => {
       setForeground(state === 'active');
       if (state !== 'active') {
+        setHistoryReady(false);
         setRows([]);
         setText('');
         attempt.current = null;
@@ -108,6 +111,7 @@ export default function Chat() {
         return;
       }
       setLoading(true);
+      setHistoryReady(false);
       setLoadError('');
       conversation(id)
         .then(async (current) => {
@@ -124,7 +128,10 @@ export default function Chat() {
           if (active) setPeerAvatar(peer);
           if (current.status === 'accepted') {
             const history = await messages(id);
-            if (active) setRows(history);
+            if (active) {
+              setRows(history);
+              setHistoryReady(true);
+            }
           }
           if (active) setChat(current);
         })
@@ -140,6 +147,7 @@ export default function Chat() {
         });
       return () => {
         active = false;
+        setHistoryReady(false);
         setRows([]);
         setChat(null);
         setText('');
@@ -184,9 +192,11 @@ export default function Chat() {
       read: () => messages(id),
       onValue: (next) => {
         setRows(next);
+        setHistoryReady(true);
         setLoadError(connectionWarning);
       },
       onError: (issue) => {
+        setHistoryReady(false);
         setRows([]);
         setLoadError(userErrorMessage(issue));
       },
@@ -229,24 +239,28 @@ export default function Chat() {
   }, [id, actor, chat?.status, foreground, connectionRevision]);
   if (!session || !validProfile)
     return (
-      <Page scrollReady={false}>
+      <Page scrollReady={false} startAtEnd>
         <Loading />
       </Page>
     );
   if (!foreground)
     return (
-      <Page scrollReady={false}>
+      <Page scrollReady={false} startAtEnd>
         <Heading title="Conversation hidden" />
       </Page>
     );
   if (loading)
     return (
-      <Page scrollReady={false}>
+      <Page scrollReady={false} startAtEnd>
         <Loading />
       </Page>
     );
   return (
-    <Page scrollReady={!!chat && !loading && foreground} startAtEnd bottomRevision={bottomRevision}>
+    <Page
+      scrollReady={chat?.status === 'accepted' ? historyReady : true}
+      startAtEnd
+      bottomRevision={bottomRevision}
+    >
       <View style={[visual.between, { marginBottom: 20 }]}>
         <View style={[visual.row, { flex: 1 }]}>
           <Avatar

@@ -1,5 +1,11 @@
 # Development status
 
+## Phase 23 — two-device feedback and scroll/keyboard correction
+
+The owner completed Android and iOS testing: authentication/autofill/password controls, regular photos, retention drafts, one-time opening/closing, profiles, blocking, shared clearing, account isolation and deletion passed. The owner clarified that message catch-up and sending work after reconnecting on iOS too. Actual one-hour expiry was not observed. iOS sign-up/deletion keyboard visibility and chat scroll continuity failed; these remain device retest items. See [acceptance and focused retest](DEVICE_ACCEPTANCE_2026_10_29.md).
+
+Corrected scroll bookkeeping to bind bookmarks to their own route, ignore loading/blurred layouts and stale measurements, and preserve explicit reading/following intent across content changes. Sending follows asynchronously rendered messages; native visible-content anchoring helps preserve older history. History failures freeze bookmarks until loaded again. iOS uses layout-based keyboard spacing with explicit focused-field reveal and avoids competing automatic insets. Android retains its keyboard inset mode. No backend, network protocol, dependency or capture-policy change is included. Native device acceptance is required before calling the visual defects resolved.
+
 ## Phase 22 — repository review and documentation refresh
 
 Reviewed auth, authorization/media lifecycle, cleanup/quotas, dependency alignment and docs. Fixed late auth-read overwrites and corrupt/incomplete vault-marker recovery, removed the deprecated SDK process lock, closed recovery SDK resources, preserved daily photo quotas after content deletion, excluded active clears from general photo batches and added expired-text operator maintenance. Reproduced the quota reset before the fix; regression now passes. SDK 58 packages are aligned to Expo Go's recommended patches, including Expo 58.0.21 / Router 58.0.28. React Native stays at 0.88.0 because the live Expo Go validator requires it; the native template's newer patch recommendation is documented rather than suppressed. No new paid service or application dependency was introduced.

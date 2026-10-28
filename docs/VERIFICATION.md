@@ -25,7 +25,7 @@ Security regressions cover outsider/anonymous denial, account binding, accepted/
 
 - Earlier SDK 58 Expo Go acceptance passed on both owner phones for core sign-in, messaging, network recovery, photos, keyboard/autofill, account switching and native capture protection.
 - The latest app launch was confirmed after starting the LAN Expo server. That connection incident did not establish an application-code crash.
-- The redesigned layout, retention drafts, scroll restoration, shared clearing and private profile photos still need the updated two-phone checklist. The second phone is currently unavailable.
+- The owner tested the redesigned app on Android and iOS: regular/one-time photos, retention drafts, profile pictures, clearing and account privacy passed. Reconnection works on both after internet returns. iOS form keyboard visibility and chat scroll continuity need retesting after phase 23. Actual one-hour expiry remains unobserved. See [current device evidence](DEVICE_ACCEPTANCE_2026_10_29.md).
 - The owner explicitly enabled screenshot testing in local development. Capture-protection acceptance requires disabling that flag, restarting Metro and fully reopening Expo Go.
 - No APK/IPA was built by the recorded source/export checks. iOS, signed-build lifecycle, accessibility and broader device-format/performance acceptance remain separate.
 
