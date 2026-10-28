@@ -21,3 +21,7 @@ Using two disposable accounts and synthetic photos:
 5. Verify ordinary new/old photos, block/unblock, reports, sign-out and account erasure still work. For an actual expiry check, use the minimum one-hour setting and confirm both phones lose the message without changing their clocks.
 
 Automated checks and JavaScript bundles do not establish native visual, screenshot, recording or accessibility acceptance. No local Docker engine or persistent Expo server is needed for source verification.
+
+## Automated evidence
+
+All 58 local tests, strict typing, lint, formatting, SDK compatibility and all 20 Doctor checks pass. Dependency audit reports zero known vulnerabilities; the reviewed local merge fork still requires maintenance. [CI run 40694203730](https://github.com/asadabbas717/loopnest/actions/runs/40694203730), source `074581e`, passes clean installation, audit, tests, temporary CLI startup/stop, Android/iOS Hermes exports and all 16 real backend tests. Android generation retains the blocked permissions. The deadline migration and `open-photo` handler are deployed to the authorized Free test project; unauthenticated opening is denied. Device and signed-build acceptance are pending.

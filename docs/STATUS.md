@@ -1,10 +1,12 @@
 # Development status
 
-## Phase 18 — cinematic interface and ephemeral controls (verification in progress)
+## Phase 18 — cinematic interface and ephemeral controls
 
 Implemented the dark graphite/lime visual system, bundled typography, avatars, participant-name conversation cards, shared navigation dock, reduced-motion-aware transitions, retention controls and a memory-only one-time photo viewer. Native capture protection remains outside navigation and session changes. The viewer closes on background/navigation and respects the earlier of sixty seconds and its server message deadline. A follow-up migration adds the delivery deadline without changing existing content. See `CINEMATIC_UI.md` for behavior and the required device checklist.
 
-Local strict typing/lint and 58 tests pass; Android/iOS Hermes exports and Android native generation succeeded before the final system-UI alignment. Full clean-install CI, final dependency checks, deadline deployment and physical-device acceptance are pending. This entry is not a claim of device capture/recording acceptance.
+Strict typing, lint, formatting and all 58 tests pass. SDK compatibility and all 20 Expo Doctor checks pass; npm audit reports zero known vulnerabilities, with the documented local-fork caveat from phase 16. Android native generation preserves all six explicit permission exclusions. Clean-install quality checks, localhost Expo startup/stop, Android/iOS Hermes exports and all 16 real backend tests passed in [CI run 40694203730](https://github.com/asadabbas717/loopnest/actions/runs/40694203730), source `074581e`. The backend test covers participant display names and atomic one-time binary delivery with a bounded deadline.
+
+Applied only the tested `202610280002_one_time_deadline.sql` migration and redeployed `open-photo` to the dedicated Free project. Hosted anonymous opening returns the expected 401/auth_required response. No hosted photo was opened or content deleted during deployment checks. Implementation and automated verification are complete; the redesigned screens and new viewer still require physical-device acceptance, particularly screenshot/recording attempts, recording started before entry, backgrounding, account switching and reduced-motion/keyboard behavior. No APK/IPA was built. Docker remains stopped locally and no persistent Expo server was started. Automatic monitored physical cleanup and aggregate free-tier abuse controls remain a subsequent phase; access denial at message deadlines already operates independently of cleanup.
 
 ## Phase 17 — ephemeral privacy backend
 

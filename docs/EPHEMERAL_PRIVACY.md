@@ -14,4 +14,6 @@ Existing messages have no expiry and existing photos remain regular unless expli
 
 ## Verification
 
+The phase-18 client now enables retention settings and one-time sending/viewing. The follow-up deadline migration and handler bound a one-time viewing session to the earlier of sixty seconds and its parent message's expiration, subtracting server work, HTTP round-trip and decoding time. Native capture protection remains mounted outside session/navigation/font changes. See `CINEMATIC_UI.md` for the device acceptance checklist. Physical maintenance is still an explicit operator workflow pending the monitored scheduler; backend access denial at expiration does not wait for it.
+
 Embedded Postgres tests exercise real migrations, recipient-only claims, direct Storage denial, expiry for both participants, physical-delete ordering, tombstones and quota preservation. Handler tests cover bounded inputs, denied browser/anonymous requests, one-time binary delivery and sanitized failure. Full-service CI additionally tests concurrent opens, actual private Storage bytes and account/session authorization. No hosted ephemeral content is changed during deployment smoke checks.
