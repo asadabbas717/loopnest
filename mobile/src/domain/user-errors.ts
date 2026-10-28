@@ -1,5 +1,9 @@
 // Only approved messages reach the UI; never render arbitrary server diagnostics.
 export const errorMessages = {
+  clear_unavailable:
+    'Chat clearing is pending or unavailable. Retry Clear chat to finish removing its photos and messages.',
+  avatar_unavailable:
+    'The profile photo could not be updated. Check your connection and try again.',
   one_time_unavailable:
     'This one-time photo is no longer available. It may have been opened or expired.',
   photo_delivery_unavailable:

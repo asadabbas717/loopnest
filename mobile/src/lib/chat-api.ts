@@ -3,6 +3,7 @@ import { displayName, messageText, username, uuid } from '../domain/validation.t
 import { createFriendsApi } from './friends-api.ts';
 import { UserFacingError } from '../domain/user-errors.ts';
 import { expirationDeadline } from '../domain/ephemeral.ts';
+import { invokePrivate } from './private-function.ts';
 export type Profile = { id: string; username: string; display_name: string };
 export type Conversation = {
   id: string;
@@ -12,6 +13,8 @@ export type Conversation = {
   created_at: string;
   retention_seconds: number | null;
   retention_changed_at: string | null;
+  clearing_at: string | null;
+  cleared_at: string | null;
 };
 export type Message = {
   id: string;
@@ -52,7 +55,9 @@ export function createChatApi(backend: () => SupabaseClient) {
     if (!session) return [];
     const { data, error } = await backend()
       .from('conversations')
-      .select('id,initiator,recipient,status,created_at,retention_seconds,retention_changed_at')
+      .select(
+        'id,initiator,recipient,status,created_at,retention_seconds,retention_changed_at,clearing_at,cleared_at',
+      )
       .neq('status', 'declined')
       .order('created_at', { ascending: false })
       .limit(50);
@@ -77,7 +82,9 @@ export function createChatApi(backend: () => SupabaseClient) {
   async function conversation(id: string): Promise<Conversation | null> {
     const { data, error } = await backend()
       .from('conversations')
-      .select('id,initiator,recipient,status,created_at,retention_seconds,retention_changed_at')
+      .select(
+        'id,initiator,recipient,status,created_at,retention_seconds,retention_changed_at,clearing_at,cleared_at',
+      )
       .eq('id', uuid(id))
       .maybeSingle();
     if (error) throw error;
@@ -158,6 +165,18 @@ export function createChatApi(backend: () => SupabaseClient) {
   }
 
   return {
+    async clearChat(id: string, actor: string, requestId: string) {
+      const data = await invokePrivate(
+        backend(),
+        'clear-chat',
+        actor,
+        {
+          body: { conversation_id: uuid(id), request_id: uuid(requestId), confirmation: 'CLEAR' },
+        },
+        'clear_unavailable',
+      );
+      if (data?.cleared !== true) throw new UserFacingError('clear_unavailable');
+    },
     ownProfile,
     saveProfile,
     conversations,

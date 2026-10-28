@@ -59,3 +59,7 @@ verify_jwt = false
 [functions.open-photo]
 # Explicit Auth.getUser and an atomic recipient-only server claim.
 verify_jwt = false
+
+[functions.clear-chat]
+# Explicit Auth.getUser; client IDs never select an actor.
+verify_jwt = false

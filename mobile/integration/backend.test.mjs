@@ -656,6 +656,34 @@ test(
           await bobFriends.setBlocked(bob.id, alice.id, true);
         },
       );
+      await t.test(
+        'shared clear removes real Storage bytes, preserves connection and rejects replay resurrection',
+        async () => {
+          const freshCid = await bob.api.invite(eve.handle);
+          await eve.api.respond(freshCid, true);
+          const upload = createPhotoUploadApi(() => bob.client);
+          const assetId = await upload.upload(
+            freshCid,
+            jpeg.buffer.slice(jpeg.byteOffset, jpeg.byteOffset + jpeg.byteLength),
+            bob.id,
+          );
+          const asset = await admin.from('photo_assets').select('path').eq('id', assetId).single();
+          ok(asset.error, 'clear fixture path');
+          paths.push(asset.data.path);
+          const oldId = randomUUID();
+          await bob.api.send(freshCid, oldId, 'clear this synthetic photo', bob.id, assetId);
+          await assert.rejects(alice.api.clearChat(freshCid, alice.id, randomUUID()));
+          const requestId = randomUUID();
+          await bob.api.clearChat(freshCid, bob.id, requestId);
+          assert.equal((await eve.api.messages(freshCid)).length, 0);
+          assert.ok((await admin.storage.from('chat-photos').download(asset.data.path)).error);
+          assert.equal((await eve.api.conversation(freshCid)).status, 'accepted');
+          await assert.rejects(bob.api.send(freshCid, oldId, 'replayed erased message', bob.id));
+          await bob.api.send(freshCid, randomUUID(), 'new beginning', bob.id);
+          await bob.api.clearChat(freshCid, bob.id, requestId);
+          assert.equal((await eve.api.messages(freshCid))[0].body, 'new beginning');
+        },
+      );
       await t.test('sign-out and a fresh sign-in do not carry over another account', async () => {
         ok((await bob.client.auth.signOut()).error, 'sign-out succeeds');
         assert.equal((await bob.client.auth.getSession()).data.session, null);

@@ -15,6 +15,7 @@ import {
   respond,
   send,
   setRetention,
+  clearChat,
   type Conversation,
   type Message,
 } from '../../lib/api';
@@ -54,6 +55,7 @@ export default function Chat() {
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<Photo | null>(null);
   const photoRef = useRef<Photo | null>(null);
+  const clearAttempt = useRef<string | null>(null);
   const refreshRef = useRef<(() => void) | null>(null);
   const attempt = useRef<{ id: string; text: string; photoId?: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -184,7 +186,10 @@ export default function Chat() {
         () => {
           conversation(id)
             .then((current) => {
-              if (active) setChat(current);
+              if (active) {
+                setChat(current);
+                queue.request();
+              }
             })
             .catch((issue) => {
               if (active) setLoadError(userErrorMessage(issue));
@@ -297,6 +302,48 @@ export default function Chat() {
           {savedSetting}
         </Text>
       )}
+      {tools && chat?.status === 'accepted' && (
+        <Button
+          title={chat.clearing_at ? 'Retry clearing chat' : 'Clear chat for both people'}
+          icon="trash-2"
+          secondary
+          disabled={busy}
+          onPress={() =>
+            Alert.alert(
+              'Clear this shared chat?',
+              'Permanently removes messages, reports and shared photos from both accounts. Your connection and disappearing-message setting remain. Saved copies and backups cannot be recalled.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Clear for both',
+                  style: 'destructive',
+                  onPress: () =>
+                    run(async () => {
+                      clearAttempt.current ??= randomUUID();
+                      await clearChat(id, actor!, clearAttempt.current);
+                      clearAttempt.current = null;
+                      attempt.current = null;
+                      discardPhoto(photoRef.current);
+                      photoRef.current = null;
+                      setPhoto(null);
+                      setText('');
+                      setOneTime(false);
+                      setRows([]);
+                      await reload();
+                      setSavedSetting('Chat cleared for both people. You can start fresh.');
+                    }),
+                },
+              ],
+            )
+          }
+        />
+      )}
+      {!!chat?.clearing_at && (
+        <Text style={[styles.copy, { marginBottom: 16 }]}>
+          Chat clearing is pending. Sending is paused; use Retry clearing chat if it does not
+          finish.
+        </Text>
+      )}
       <Notice text={loadError || error} />
       {!chat && <Text style={styles.copy}>This conversation is unavailable.</Text>}
       {chat?.status === 'pending' && (
@@ -333,7 +380,7 @@ export default function Chat() {
           )}
         </View>
       )}
-      {chat?.status === 'accepted' && (
+      {chat?.status === 'accepted' && !chat.clearing_at && (
         <>
           {!!rows.length && (
             <Button

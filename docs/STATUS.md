@@ -1,5 +1,11 @@
 # Development status
 
+## Phase 20 — explicit shared-chat clearing (verification in progress)
+
+Added confirmed Clear chat for both people in conversation settings. The authenticated Edge endpoint binds the actor to Auth.getUser, verifies accepted/nonblocked participation, freezes writes and photo reads, removes physical objects through Storage, and only then deletes messages/assets/reports. The connection and retention setting remain. Private delivery tombstones prevent old send retries from restoring removed content and preserve quotas. Request IDs make retries idempotent, including a lost success response after fresh messages arrive. Failed cleanup remains frozen and retryable. No existing hosted chat is automatically cleared.
+
+Strict typing, lint, formatting and all 62 tests pass, including real PostgreSQL privilege, freeze, physical-delete ordering, retry and resurrection regressions. Added a full-service integration scenario for actual Storage removal and an idempotent retry after a new message. Hosted deployment and full CI are pending. Phase 19 clean-install checks, platform exports and all 16 backend tests passed in [run 40708498962](https://github.com/asadabbas717/loopnest/actions/runs/40708498962), source `d3cca8b`; its new UI still requires device acceptance.
+
 ## Phase 19 — feedback: media sizing, retention drafts and scroll continuity
 
 Owner screenshots show narrow media bubbles, overflowing one-time labels, blank-looking older-photo areas and retention presets closing the panel. Media messages now have a bounded viewport-based width; ordinary photos have a fixed loading frame and explicit loading indicator. Unexpired regular photos are intended to remain visible; expired/consumed one-time media remains denied. No access policy is weakened to recover a denied photo. Retention presets edit a draft, Save applies it without closing settings, and hours/days convert the numeric value while preserving the duration. The draft initializes from the actual server setting and displays its proposed duration. A regression checks all hourly conversions from one hour through thirty days.
