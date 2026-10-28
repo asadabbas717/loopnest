@@ -249,7 +249,12 @@ export default function Chat() {
     <Page scrollReady={!!chat && !loading && foreground} startAtEnd bottomRevision={bottomRevision}>
       <View style={[visual.between, { marginBottom: 20 }]}>
         <View style={[visual.row, { flex: 1 }]}>
-          <Avatar name={name} userId={peerAvatar?.id} photoId={peerAvatar?.avatar_id} />
+          <Avatar
+            key={connectionRevision}
+            name={name}
+            userId={peerAvatar?.id}
+            photoId={peerAvatar?.avatar_id}
+          />
           <View style={{ flex: 1, gap: 5 }}>
             <Text
               numberOfLines={1}
@@ -420,7 +425,7 @@ export default function Chat() {
             .reverse()
             .map((message) => (
               <View
-                key={message.id}
+                key={`${message.id}:${connectionRevision}`}
                 style={[
                   styles.card,
                   {
