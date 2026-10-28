@@ -3,6 +3,7 @@ import { Alert, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSession } from '../providers/Session';
 import { backend } from '../lib/client';
+import { captureTesting } from '../lib/privacy-config';
 import { deleteAccount } from '../lib/api';
 import { createModerationApi } from '../lib/moderation-api';
 import { userErrorMessage, errorMessages } from '../domain/user-errors';
@@ -80,10 +81,11 @@ export default function Account() {
         advertising or analytics SDKs are included.
       </Text>
       <View style={[styles.card, { marginBottom: 24 }]}>
-        <Badge text="SCREEN GUARD" icon="shield" accent />
+        <Badge text={captureTesting ? 'UI CAPTURE TESTING' : 'SCREEN GUARD'} icon="shield" accent />
         <Text style={styles.copy}>
-          Screen-capture protection stays on across chats and one-time photos. Private screens are
-          hidden when you leave the app.
+          {captureTesting
+            ? 'Screenshots and recording are temporarily enabled in this development session. Private screens are still hidden when you leave the app.'
+            : 'Screen-capture protection stays on across chats and one-time photos. Private screens are hidden when you leave the app.'}
         </Text>
         <Text style={visual.small}>
           Another camera or a compromised device can still capture content.

@@ -3,6 +3,7 @@ import { AppState, Text, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { backend, backendUrl, publicKey } from '../../lib/client';
+import { captureTesting } from '../../lib/privacy-config';
 import { createOpenPhotoApi, privateImageData } from '../../lib/open-photo-api';
 import { useSession } from '../../providers/Session';
 import { userErrorMessage, UserFacingError } from '../../domain/user-errors';
@@ -129,8 +130,9 @@ export default function OneTimeViewer() {
             closes it permanently.
           </Text>
           <Text style={[visual.small, { textAlign: 'center' }]}>
-            Screen protection is active. An external camera or a compromised device can still
-            capture it.
+            {captureTesting
+              ? 'UI test mode: screenshots and recording are enabled for this development session.'
+              : 'Screen protection is active. An external camera or a compromised device can still capture it.'}
           </Text>
         </View>
       )}

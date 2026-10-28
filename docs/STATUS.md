@@ -1,5 +1,9 @@
 # Development status
 
+### Temporary development capture mode — owner requested
+
+Added explicit `EXPO_PUBLIC_ALLOW_TEST_SCREENSHOTS` opt-in, enabled only in the ignored local environment for UI feedback. The default/example is false and release runtimes ignore even a true value. Native screenshot/recording prevention is relaxed together only in that development mode, with a persistent banner and accurate screen copy. The inactive cover, iOS app-switcher overlay, recipient-only claims, expiration and viewer background closure remain in place. Restart Metro and fully close/reopen Expo Go when switching policies; the protection manager intentionally survives Fast Refresh. Set the local flag to false and restart before normal capture acceptance. Strict typing, lint, formatting and all 59 tests pass, including release/default denial for the test flag. No backend, billing or dependency change was required. Device confirmation of this testing mode is pending; see `CINEMATIC_UI.md`.
+
 ## Phase 18 — cinematic interface and ephemeral controls
 
 Implemented the dark graphite/lime visual system, bundled typography, avatars, participant-name conversation cards, shared navigation dock, reduced-motion-aware transitions, retention controls and a memory-only one-time photo viewer. Native capture protection remains outside navigation and session changes. The viewer closes on background/navigation and respects the earlier of sixty seconds and its server message deadline. A follow-up migration adds the delivery deadline without changing existing content. See `CINEMATIC_UI.md` for behavior and the required device checklist.

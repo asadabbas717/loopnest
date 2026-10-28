@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { randomUUID } from 'expo-crypto';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { backend } from '../../lib/client';
+import { captureTesting } from '../../lib/privacy-config';
 import { messageChannel } from '../../lib/message-channel';
 import { createRefreshQueue } from '../../lib/refresh-queue';
 import {
@@ -251,7 +252,9 @@ export default function Chat() {
           text={
             chat?.retention_seconds
               ? `DISAPPEARS · ${retentionLabel(chat.retention_seconds).toUpperCase()}`
-              : 'SCREEN PROTECTED'
+              : captureTesting
+                ? 'UI CAPTURE TESTING'
+                : 'SCREEN PROTECTED'
           }
           icon={chat?.retention_seconds ? 'clock' : 'shield'}
           accent

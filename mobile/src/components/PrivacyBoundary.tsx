@@ -7,6 +7,7 @@ import {
   preventScreenCaptureAsync,
 } from 'expo-screen-capture';
 import { createScreenProtection } from '../domain/screen-protection';
+import { captureTesting } from '../lib/privacy-config';
 
 const protectionKey = 'loopnest-private';
 // Keep a single lease manager through Fast Refresh as well as normal mounts.
@@ -14,7 +15,10 @@ const runtime = globalThis as typeof globalThis & {
   __loopnestScreenProtection?: ReturnType<typeof createScreenProtection>;
 };
 const protection = (runtime.__loopnestScreenProtection ??= createScreenProtection({
-  prevent: () => preventScreenCaptureAsync(protectionKey),
+  prevent: () =>
+    captureTesting
+      ? allowScreenCaptureAsync(protectionKey)
+      : preventScreenCaptureAsync(protectionKey),
   allow: () => allowScreenCaptureAsync(protectionKey),
   enableOverlay: async () => {
     if (Platform.OS === 'ios') await enableAppSwitcherProtectionAsync(1);
@@ -74,6 +78,13 @@ export function PrivacyBoundary({ children }: PropsWithChildren) {
     );
   return (
     <View style={{ flex: 1 }}>
+      {captureTesting && (
+        <View style={{ backgroundColor: '#493311', paddingHorizontal: 16, paddingVertical: 10 }}>
+          <Text style={{ color: '#FFE3A3', textAlign: 'center', fontSize: 12 }}>
+            UI TEST MODE · Screenshots and recording enabled
+          </Text>
+        </View>
+      )}
       <View
         style={{ flex: 1 }}
         accessibilityElementsHidden={!foreground}

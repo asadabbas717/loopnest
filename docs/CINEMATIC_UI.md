@@ -12,6 +12,12 @@ Native screenshot/recording prevention stays active above all navigation and ses
 
 ## Device acceptance still required
 
+### Temporary screenshot testing
+
+For authorized UI feedback only, set `EXPO_PUBLIC_ALLOW_TEST_SCREENSHOTS=true` in the ignored `mobile/.env`. It requires the React Native development runtime; release builds ignore the flag and retain capture prevention. The example/default is false. Fully stop/restart Metro and close/reopen Expo Go after changing it: Fast Refresh preserves the existing native protection manager. A persistent UI test banner and privacy copy identify the relaxed capture policy. Android's shared secure-window flag controls screenshots and recording together, so this testing opt-in enables both; it does not provide screenshot-only protection. The inactive cover/iOS app-switcher overlay, one-time claims, deadlines and background closure remain active. Use synthetic content. Set the value to false and restart both processes to restore normal protection; rerun capture acceptance with the flag off before release.
+
+### Acceptance checklist
+
 Using two disposable accounts and synthetic photos:
 
 1. Check names, long names, navigation, scrolling, larger system text, password/autofill and the keyboard on long forms. Enable reduced motion and verify transitions respect it.
