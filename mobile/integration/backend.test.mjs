@@ -368,16 +368,26 @@ test(
               ).error,
             );
           }
-          const open = (actor) =>
-            actor.client.functions.invoke('open-photo', { body: { asset_id: once.id } });
-          for (const actor of [alice, eve]) assert.equal((await open(actor)).response.status, 404);
+          const open = async (actor) => {
+            const session = (await actor.client.auth.getSession()).data.session;
+            return fetch(`${local.url}/functions/v1/open-photo`, {
+              method: 'POST',
+              headers: {
+                apikey: local.key,
+                Authorization: `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ asset_id: once.id }),
+            });
+          };
+          for (const actor of [alice, eve]) assert.equal((await open(actor)).status, 404);
           const openings = await Promise.all([open(bob), open(bob)]);
-          assert.deepEqual(openings.map((r) => r.response.status).sort(), [200, 404]);
-          const delivered = openings.find((r) => !r.error);
-          const decoded = jpegCodec.decode(new Uint8Array(await delivered.data.arrayBuffer()));
+          assert.deepEqual(openings.map((r) => r.status).sort(), [200, 404]);
+          const delivered = openings.find((r) => r.status === 200);
+          const decoded = jpegCodec.decode(new Uint8Array(await delivered.arrayBuffer()));
           assert.equal(decoded.width, 1);
-          assert.match(delivered.response.headers.get('cache-control'), /no-store/);
-          assert.equal((await open(bob)).response.status, 404);
+          assert.match(delivered.headers.get('cache-control'), /no-store/);
+          assert.equal((await open(bob)).status, 404);
           ok(
             (
               await admin
