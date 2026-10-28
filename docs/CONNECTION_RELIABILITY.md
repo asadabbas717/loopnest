@@ -10,6 +10,8 @@ Sending still uses an idempotent message ID for retries of the unchanged attempt
 
 ## Device acceptance
 
+On October 28, 2026, the owner reported both phones passed the requested live-delivery, offline catch-up, continued live delivery after reconnection, and unchanged failed-send retry tests, along with photo, form/navigation and privacy checks, in SDK 58 Expo Go. Initial catch-up was allowed to use Refresh; the owner did not specify whether it was needed. This accepts the requested core network scenarios without asserting every interruption/lifecycle variant below was independently exercised.
+
 Use disposable accounts and synthetic content. Reload the updated app first.
 
 1. With both accounts in the conversation, disconnect the receiving phone from the network, send two messages from the other phone, then reconnect. The missing messages should appear after reconnection; use Refresh if needed. The disconnection warning must clear when live updates and the history read recover.

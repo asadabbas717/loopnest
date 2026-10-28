@@ -6,6 +6,8 @@ The owner reports both phones updated to Expo Go 58.0.2 and can no longer load t
 
 Strict typing, lint, formatting, all 44 local tests, SDK dependency alignment, Expo Doctor's 20 checks and Android/iOS Hermes exports pass. The two removed tests belonged exclusively to the removed decoder package. Installed dependencies report no invalid peers. Clean-install quality/platform checks and all 15 real backend tests passed in [CI run 40293912067](https://github.com/asadabbas717/loopnest/actions/runs/40293912067), source `04e48ae`. The SDK upgrade implementation and automated verification are complete; SDK 58 physical-device acceptance remains pending.
 
+On October 28, 2026, the owner reported all six requested tests passed on both phones with SDK 58 Expo Go: bidirectional live delivery, offline receiving/reconnect catch-up and subsequent live delivery, failed-send retry without duplicates, new/older photo viewing, keyboard/password/autofill/navigation, and recent-apps/screenshot/account-switch privacy. This completes the requested SDK 58 device acceptance and core phase 14 network acceptance. Whether initial catch-up required manual Refresh was not specified. These are owner-reported results on the tested phones, not signed-build, untested-platform, token-expiry or independent security assurance.
+
 The audit still has five high affected packages in the existing Forge/Zod development/signing paths; these release blockers are not waived. See `SDK_58_UPGRADE.md`. No hosted backend migration, billing change or APK/IPA build was performed. No Docker engine or live Expo server was started for this phase.
 
 ## Phase 14 — conversation reconnection

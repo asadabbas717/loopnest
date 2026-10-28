@@ -26,4 +26,6 @@ The new router has no `query-string` dependency. Removed the unused local `decod
 
 Strict typing, lint, formatting and 44 tests pass. Expo Doctor passes 20/20 checks, dependency compatibility passes, and the full installed dependency tree reports no invalid peers. Android generation preserves explicit permission removal directives for READ_MEDIA_IMAGES, READ_EXTERNAL_STORAGE, DETECT_SCREEN_CAPTURE, CAMERA and RECORD_AUDIO. Android and iOS Hermes exports pass. Clean-install CI also passes the quality/platform checks and all 15 real backend tests; see `STATUS.md` for the verified run.
 
-The dependency audit still reports five high affected packages and no moderate/critical findings; see `DEPENDENCIES.md` for the unresolved release blockers. No APK/IPA has been compiled and physical-device acceptance remains pending.
+On October 28, 2026, the owner confirmed all six requested smoke/network/privacy tests passed on both phones in SDK 58 Expo Go. See `STATUS.md` for the scope and limits of that acceptance.
+
+The dependency audit still reports five high affected packages and no moderate/critical findings; see `DEPENDENCIES.md` for the unresolved release blockers. No APK/IPA has been compiled; standalone-build and broader platform testing remain separate requirements.
