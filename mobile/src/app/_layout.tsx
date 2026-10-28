@@ -15,19 +15,21 @@ import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
 import { palette } from '../components/theme';
+import { ScrollMemoryProvider } from '../providers/ScrollMemory';
 function Navigator() {
   const { session } = useSession();
   const reduced = useReducedMotion();
   return (
-    <Stack
-      key={session?.user.id ?? 'signed-out'}
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: palette.paper },
-        animation: reduced ? 'none' : 'slide_from_right',
-        animationDuration: 240,
-      }}
-    />
+    <ScrollMemoryProvider key={session?.user.id ?? 'signed-out'}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: palette.paper },
+          animation: reduced ? 'none' : 'slide_from_right',
+          animationDuration: 240,
+        }}
+      />
+    </ScrollMemoryProvider>
   );
 }
 function Fonts({ retry }: { retry: () => void }) {

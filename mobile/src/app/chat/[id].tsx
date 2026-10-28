@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Pressable, Text, View } from 'react-native';
+import { Alert, AppState, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { randomUUID } from 'expo-crypto';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -45,6 +45,10 @@ export default function Chat() {
   const [name, setName] = useState('Conversation');
   const [handle, setHandle] = useState('');
   const [tools, setTools] = useState(false);
+  const [savedSetting, setSavedSetting] = useState('');
+  const [bottomRevision, setBottomRevision] = useState(0);
+  const { width } = useWindowDimensions();
+  const mediaWidth = Math.max(150, Math.min(380, (Math.min(width, 720) - 48) * 0.94));
   const [oneTime, setOneTime] = useState(false);
   const [rows, setRows] = useState<Message[]>([]);
   const [text, setText] = useState('');
@@ -208,24 +212,24 @@ export default function Chat() {
   }, [id, actor, chat?.status, foreground, connectionRevision]);
   if (!session || !validProfile)
     return (
-      <Page>
+      <Page scrollReady={false}>
         <Loading />
       </Page>
     );
   if (!foreground)
     return (
-      <Page>
+      <Page scrollReady={false}>
         <Heading title="Conversation hidden" />
       </Page>
     );
   if (loading)
     return (
-      <Page>
+      <Page scrollReady={false}>
         <Loading />
       </Page>
     );
   return (
-    <Page>
+    <Page scrollReady={!!chat && !loading && foreground} startAtEnd bottomRevision={bottomRevision}>
       <View style={[visual.between, { marginBottom: 20 }]}>
         <View style={[visual.row, { flex: 1 }]}>
           <Avatar name={name} />
@@ -276,16 +280,22 @@ export default function Chat() {
       </Text>
       {tools && chat?.status === 'accepted' && (
         <RetentionSettings
+          key={chat.retention_seconds ?? 'off'}
           seconds={chat.retention_seconds}
           busy={busy}
           onSave={(seconds) =>
             run(async () => {
               await setRetention(id, seconds, actor!);
               await reload();
-              setTools(false);
+              setSavedSetting('Disappearing-message setting saved. It applies to new messages.');
             })
           }
         />
+      )}
+      {tools && !!savedSetting && (
+        <Text style={[visual.small, { marginBottom: 16 }]} accessibilityLiveRegion="polite">
+          {savedSetting}
+        </Text>
       )}
       <Notice text={loadError || error} />
       {!chat && <Text style={styles.copy}>This conversation is unavailable.</Text>}
@@ -358,6 +368,7 @@ export default function Chat() {
                     maxWidth: '94%',
                     alignSelf: message.sender_id === actor ? 'flex-end' : 'flex-start',
                     minWidth: 150,
+                    ...(message.photo_id || message.view_once ? { width: mediaWidth } : {}),
                     backgroundColor: message.sender_id === actor ? '#22311F' : '#14212A',
                     borderColor: message.sender_id === actor ? '#3A4C30' : '#283A47',
                     borderBottomRightRadius: message.sender_id === actor ? 5 : 20,
@@ -517,6 +528,7 @@ export default function Chat() {
                 setPhoto(null);
                 setOneTime(false);
                 await reload();
+                setBottomRevision((value) => value + 1);
               })
             }
           />

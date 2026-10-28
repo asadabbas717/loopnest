@@ -1,5 +1,11 @@
 # Development status
 
+## Phase 19 — feedback: media sizing, retention drafts and scroll continuity
+
+Owner screenshots show narrow media bubbles, overflowing one-time labels, blank-looking older-photo areas and retention presets closing the panel. Media messages now have a bounded viewport-based width; ordinary photos have a fixed loading frame and explicit loading indicator. Unexpired regular photos are intended to remain visible; expired/consumed one-time media remains denied. No access policy is weakened to recover a denied photo. Retention presets edit a draft, Save applies it without closing settings, and hours/days convert the numeric value while preserving the duration. The draft initializes from the actual server setting and displays its proposed duration. A regression checks all hourly conversions from one hour through thirty days.
+
+Added account-scoped in-memory scroll offsets, deferred restoration until asynchronous content is ready, and chat entry at the latest messages when there is no saved offset. Sending scrolls to the composer rather than resetting to the top. Offset memory contains no content, is bounded to fifty routes and is discarded on account changes. Strict typing/lint and 60 tests pass. Platform/clean-install CI and device acceptance are pending; profile pictures and explicit shared-chat clearing are the next implementation phase.
+
 ### Temporary development capture mode — owner requested
 
 Added explicit `EXPO_PUBLIC_ALLOW_TEST_SCREENSHOTS` opt-in, enabled only in the ignored local environment for UI feedback. The default/example is false and release runtimes ignore even a true value. Native screenshot/recording prevention is relaxed together only in that development mode, with a persistent banner and accurate screen copy. The inactive cover, iOS app-switcher overlay, recipient-only claims, expiration and viewer background closure remain in place. Restart Metro and fully close/reopen Expo Go when switching policies; the protection manager intentionally survives Fast Refresh. Set the local flag to false and restart before normal capture acceptance. Strict typing, lint, formatting and all 59 tests pass, including release/default denial for the test flag. No backend, billing or dependency change was required. Device confirmation of this testing mode is pending; see `CINEMATIC_UI.md`.

@@ -42,7 +42,7 @@ export function OneTimeCard({ id, sender }: { id: string | null; sender: string 
   }, [id]);
   const own = session?.user.id === sender;
   return (
-    <View style={{ gap: 12, paddingVertical: 8 }}>
+    <View style={{ gap: 12, paddingVertical: 8, width: '100%' }}>
       <View style={visual.row}>
         <View
           style={{

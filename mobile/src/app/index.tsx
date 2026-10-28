@@ -116,7 +116,7 @@ export default function Home() {
     );
   if (!profile) return <Onboarding />;
   return (
-    <Page dock="chats">
+    <Page dock="chats" scrollReady={listed?.actor === userId}>
       <View style={[visual.between, { marginBottom: 24 }]}>
         <View style={visual.row}>
           <Avatar name={profile.display_name} size={42} self />

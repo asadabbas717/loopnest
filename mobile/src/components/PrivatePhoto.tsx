@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { backendUrl, publicKey } from '../lib/client';
 import { photoPath } from '../lib/photos';
@@ -11,6 +11,7 @@ export function PrivatePhoto({ id }: { id: string }) {
   const { session } = useSession();
   const [result, setResult] = useState<{ id: string; path: string | null } | null>(null);
   const [failure, setFailure] = useState('');
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     let active = true;
     photoPath(id)
@@ -34,20 +35,36 @@ export function PrivatePhoto({ id }: { id: string }) {
   if (!path)
     return <Text style={styles.copy}>This photo is unavailable or no longer shared with you.</Text>;
   return (
-    <Image
-      accessibilityLabel="Photo shared in this conversation"
-      accessible
-      source={{
-        uri: `${backendUrl}/storage/v1/object/authenticated/chat-photos/${path}`,
-        headers: { Authorization: `Bearer ${session.access_token}`, apikey: publicKey },
+    <View
+      style={{
+        width: '100%',
+        height: 240,
+        borderRadius: 12,
+        overflow: 'hidden',
+        backgroundColor: '#080C11',
       }}
-      cachePolicy="none"
-      recyclingKey={id}
-      contentFit="contain"
-      onError={() =>
-        setFailure('This photo could not be loaded. Refresh the conversation to try again.')
-      }
-      style={{ width: '100%', height: 240, borderRadius: 12 }}
-    />
+    >
+      {!loaded && (
+        <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+          <ActivityIndicator accessibilityLabel="Loading shared photo" />
+        </View>
+      )}
+      <Image
+        accessibilityLabel="Photo shared in this conversation"
+        accessible
+        source={{
+          uri: `${backendUrl}/storage/v1/object/authenticated/chat-photos/${path}`,
+          headers: { Authorization: `Bearer ${session.access_token}`, apikey: publicKey },
+        }}
+        cachePolicy="none"
+        recyclingKey={id}
+        contentFit="contain"
+        onLoad={() => setLoaded(true)}
+        onError={() =>
+          setFailure('This photo could not be loaded. Refresh the conversation to try again.')
+        }
+        style={{ width: '100%', height: 240, borderRadius: 12 }}
+      />
+    </View>
   );
 }

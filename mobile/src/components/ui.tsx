@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type PropsWithChildren,
+} from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -11,10 +18,14 @@ import {
   type TextInputProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import {
+  KeyboardAwareScrollView,
+  type KeyboardAwareScrollViewRef,
+} from 'react-native-keyboard-controller';
 import { userErrorMessage } from '../domain/user-errors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { usePathname, useRouter } from 'expo-router';
+import { useFocusEffect, usePathname, useRouter } from 'expo-router';
+import { ScrollMemory } from '../providers/ScrollMemory';
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -28,9 +39,61 @@ export { palette } from './theme';
 export function Page({
   children,
   dock,
-}: PropsWithChildren<{ dock?: 'chats' | 'friends' | 'account' }>) {
+  scrollReady = true,
+  startAtEnd = false,
+  bottomRevision = 0,
+}: PropsWithChildren<{
+  dock?: 'chats' | 'friends' | 'account';
+  scrollReady?: boolean;
+  startAtEnd?: boolean;
+  bottomRevision?: number;
+}>) {
   const router = useRouter();
   const path = usePathname();
+  const memory = useContext(ScrollMemory);
+  const scroll = useRef<KeyboardAwareScrollViewRef>(null);
+  const focused = useRef(false);
+  const restoring = useRef(true);
+  const contentHeight = useRef(0);
+  const viewport = useRef(0);
+  const restore = useCallback(() => {
+    if (
+      !scrollReady ||
+      !focused.current ||
+      !restoring.current ||
+      !contentHeight.current ||
+      !viewport.current
+    )
+      return;
+    const saved = memory?.get(path);
+    scroll.current?.scrollTo({
+      y: saved ?? (startAtEnd ? Math.max(0, contentHeight.current - viewport.current) : 0),
+      animated: false,
+    });
+    restoring.current = false;
+  }, [scrollReady, memory, path, startAtEnd]);
+  useFocusEffect(
+    useCallback(() => {
+      focused.current = true;
+      restoring.current = true;
+      const frame = requestAnimationFrame(restore);
+      return () => {
+        focused.current = false;
+        cancelAnimationFrame(frame);
+      };
+    }, [restore]),
+  );
+  useEffect(() => {
+    if (!scrollReady) restoring.current = true;
+    const frame = requestAnimationFrame(restore);
+    return () => cancelAnimationFrame(frame);
+  }, [restore, scrollReady]);
+  useEffect(() => {
+    if (bottomRevision > 0) {
+      const frame = requestAnimationFrame(() => scroll.current?.scrollToEnd({ animated: false }));
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [bottomRevision]);
   const [keyboard, setKeyboard] = useState(false);
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => setKeyboard(true));
@@ -106,6 +169,20 @@ export function Page({
         </View>
       </View>
       <KeyboardAwareScrollView
+        ref={scroll}
+        onLayout={(event) => {
+          viewport.current = event.nativeEvent.layout.height;
+          restore();
+        }}
+        onContentSizeChange={(_width, height) => {
+          contentHeight.current = height;
+          restore();
+        }}
+        onScroll={(event) => {
+          if (focused.current && scrollReady && !restoring.current)
+            memory?.set(path, event.nativeEvent.contentOffset.y);
+        }}
+        scrollEventThrottle={32}
         style={{ flex: 1 }}
         contentContainerStyle={[styles.body, dock && { paddingBottom: 115 }]}
         bottomOffset={24}

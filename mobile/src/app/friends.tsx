@@ -85,7 +85,7 @@ export default function Friends() {
     });
   };
   return (
-    <Page dock="friends">
+    <Page dock="friends" scrollReady={result?.actor === actor && result?.kind === kind}>
       <Heading
         eyebrow="YOUR INNER CIRCLE"
         title="Your people."

@@ -3,6 +3,12 @@ import { Pressable, Text, View } from 'react-native';
 import { Button, Field, styles } from './ui';
 import { Icon, visual } from './visuals';
 import { fonts, palette } from './theme';
+import {
+  retentionDraft,
+  convertDuration,
+  durationSeconds,
+  type DurationUnit,
+} from '../domain/retention-draft';
 export function retentionLabel(seconds: number | null) {
   if (!seconds) return 'Off';
   return seconds % 86400 === 0
@@ -18,8 +24,14 @@ export function RetentionSettings({
   busy: boolean;
   onSave: (seconds: number | null) => void;
 }) {
-  const [value, setValue] = useState('24');
-  const [unit, setUnit] = useState<'hours' | 'days'>('hours');
+  const [draft, setDraft] = useState(() => retentionDraft(seconds));
+  const selected = draft.enabled ? durationSeconds(draft.value, draft.unit) : null;
+  const changeUnit = (unit: DurationUnit) =>
+    setDraft((current) => ({
+      ...current,
+      unit,
+      value: convertDuration(current.value, current.unit, unit),
+    }));
   return (
     <View style={styles.card}>
       <View style={visual.row}>
@@ -40,23 +52,23 @@ export function RetentionSettings({
           <Pressable
             key={option.label}
             accessibilityRole="button"
-            accessibilityState={{ selected: seconds === option.seconds, disabled: busy }}
+            accessibilityState={{ selected: selected === option.seconds, disabled: busy }}
             disabled={busy}
-            onPress={() => onSave(option.seconds)}
+            onPress={() => setDraft(retentionDraft(option.seconds))}
             style={{
               paddingHorizontal: 12,
               minHeight: 44,
               justifyContent: 'center',
               borderRadius: 12,
-              backgroundColor: seconds === option.seconds ? '#2B4120' : palette.raised,
+              backgroundColor: selected === option.seconds ? '#2B4120' : palette.raised,
               borderWidth: 1,
-              borderColor: seconds === option.seconds ? '#597B37' : palette.line,
+              borderColor: selected === option.seconds ? '#597B37' : palette.line,
             }}
           >
             <Text
               style={{
                 fontFamily: fonts.medium,
-                color: seconds === option.seconds ? palette.accent : palette.ink,
+                color: selected === option.seconds ? palette.accent : palette.ink,
                 fontSize: 12,
               }}
             >
@@ -66,43 +78,44 @@ export function RetentionSettings({
         ))}
       </View>
       <Field
-        label="Or choose your own duration"
-        value={value}
-        onChangeText={setValue}
-        keyboardType="number-pad"
-        maxLength={3}
+        label={`Custom duration (${draft.unit})`}
+        value={draft.value}
+        onChangeText={(value) => setDraft((current) => ({ ...current, enabled: true, value }))}
+        keyboardType="decimal-pad"
+        maxLength={12}
         editable={!busy}
       />
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1 }}>
           <Button
             title="Hours"
-            secondary={unit !== 'hours'}
+            secondary={draft.unit !== 'hours'}
             disabled={busy}
-            onPress={() => setUnit('hours')}
+            onPress={() => changeUnit('hours')}
           />
         </View>
         <View style={{ flex: 1 }}>
           <Button
             title="Days"
-            secondary={unit !== 'days'}
+            secondary={draft.unit !== 'days'}
             disabled={busy}
-            onPress={() => setUnit('days')}
+            onPress={() => changeUnit('days')}
           />
         </View>
       </View>
       <Button
-        title="Set disappearing messages"
+        title="Save disappearing messages"
         icon="clock"
         disabled={busy}
-        onPress={() =>
-          onSave(
-            /^\d+$/.test(value) ? Number(value) * (unit === 'hours' ? 3600 : 86400) : Number.NaN,
-          )
-        }
+        onPress={() => onSave(selected)}
       />
       <Text style={visual.small}>
-        Choose 1 hour to 30 days. Saved copies and provider backups cannot be recalled.
+        {selected === null
+          ? 'Draft: Off.'
+          : Number.isFinite(selected)
+            ? `Draft: ${retentionLabel(selected)}.`
+            : 'Enter a duration in whole hours, from 1 hour to 30 days.'}{' '}
+        Tap Save to apply. Saved copies and provider backups cannot be recalled.
       </Text>
     </View>
   );
