@@ -10,6 +10,7 @@ test('retention drafts reflect the saved value and unit changes preserve duratio
   for (let hours = 1; hours <= 720; hours++) {
     const days = convertDuration(String(hours), 'hours', 'days');
     assert.equal(durationSeconds(days, 'days'), hours * 3600);
+    assert.equal(convertDuration(days, 'days', 'hours'), String(hours));
   }
   for (const [value, unit] of [
     ['0', 'hours'],

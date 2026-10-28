@@ -8,7 +8,11 @@ export function retentionDraft(seconds: number | null) {
 }
 export function convertDuration(value: string, from: DurationUnit, to: DurationUnit): string {
   if (from === to || !/^\d+(?:\.\d+)?$/.test(value)) return value;
-  return String(Number((Number(value) * (from === 'hours' ? 1 / 24 : 24)).toFixed(6)));
+  const converted = Number(value) * (from === 'hours' ? 1 / 24 : 24);
+  // Converted fractional days must return to a clean whole-hour value.
+  if (to === 'hours' && Math.abs(converted - Math.round(converted)) < 0.00002)
+    return String(Math.round(converted));
+  return String(Number(converted.toFixed(6)));
 }
 export function durationSeconds(value: string, unit: DurationUnit): number {
   if (!/^\d+(?:\.\d+)?$/.test(value)) return Number.NaN;
