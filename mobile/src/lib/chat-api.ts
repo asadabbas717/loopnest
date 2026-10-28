@@ -9,6 +9,8 @@ export type Conversation = {
   recipient: string;
   status: 'pending' | 'accepted' | 'declined';
   created_at: string;
+  retention_seconds: number | null;
+  retention_changed_at: string | null;
 };
 export type Message = {
   id: string;
@@ -16,6 +18,9 @@ export type Message = {
   body: string;
   photo_id: string | null;
   created_at: string;
+  expires_at: string | null;
+  view_once: boolean;
+  expires_monotonic?: number;
 };
 
 export function createChatApi(backend: () => SupabaseClient) {
@@ -38,7 +43,7 @@ export function createChatApi(backend: () => SupabaseClient) {
   async function conversations(): Promise<Conversation[]> {
     const { data, error } = await backend()
       .from('conversations')
-      .select('id,initiator,recipient,status,created_at')
+      .select('id,initiator,recipient,status,created_at,retention_seconds,retention_changed_at')
       .neq('status', 'declined')
       .order('created_at', { ascending: false })
       .limit(50);
@@ -48,7 +53,7 @@ export function createChatApi(backend: () => SupabaseClient) {
   async function conversation(id: string): Promise<Conversation | null> {
     const { data, error } = await backend()
       .from('conversations')
-      .select('id,initiator,recipient,status,created_at')
+      .select('id,initiator,recipient,status,created_at,retention_seconds,retention_changed_at')
       .eq('id', uuid(id))
       .maybeSingle();
     if (error) throw error;
@@ -73,24 +78,30 @@ export function createChatApi(backend: () => SupabaseClient) {
     id: string,
     before?: Pick<Message, 'created_at' | 'id'>,
   ): Promise<Message[]> {
-    let query = backend()
-      .from('messages')
-      .select('id,sender_id,body,photo_id,created_at')
-      .eq('conversation_id', uuid(id))
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(40);
+    uuid(id);
     if (before) {
       uuid(before.id);
       if (!/^\d{4}-\d{2}-\d{2}T[0-9:.]+(?:Z|[+-]\d{2}:\d{2})$/.test(before.created_at))
         throw new Error('Invalid history cursor.');
-      query = query.or(
-        `created_at.lt.${before.created_at},and(created_at.eq.${before.created_at},id.lt.${before.id})`,
-      );
     }
-    const { data, error } = await query;
+    const started = performance.now();
+    const { data, error } = await backend().rpc('message_history', {
+      cid: id,
+      before_time: before?.created_at ?? null,
+      before_id: before?.id ?? null,
+    });
     if (error) throw error;
-    return data;
+    const received = performance.now();
+    return (data as (Message & { server_time: string })[]).map((row) => ({
+      ...row,
+      expires_monotonic: row.expires_at
+        ? received +
+          Math.max(
+            0,
+            Date.parse(row.expires_at) - Date.parse(row.server_time) - (received - started),
+          )
+        : undefined,
+    }));
   }
   async function send(
     id: string,
@@ -112,6 +123,15 @@ export function createChatApi(backend: () => SupabaseClient) {
     await createFriendsApi(backend).setBlocked(self, other, true);
   }
 
+  async function setRetention(id: string, seconds: number | null, actor: string) {
+    const { error } = await backend().rpc('set_message_retention', {
+      cid: uuid(id),
+      seconds,
+      expected_actor: uuid(actor),
+    });
+    if (error) throw error;
+  }
+
   return {
     ownProfile,
     saveProfile,
@@ -123,5 +143,6 @@ export function createChatApi(backend: () => SupabaseClient) {
     messages,
     send,
     blockUser,
+    setRetention,
   };
 }

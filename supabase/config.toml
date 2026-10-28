@@ -55,3 +55,7 @@ verify_jwt = false
 [functions.upload-photo]
 # Handler explicitly verifies the bearer with Auth.getUser before claiming work.
 verify_jwt = false
+
+[functions.open-photo]
+# Explicit Auth.getUser and an atomic recipient-only server claim.
+verify_jwt = false

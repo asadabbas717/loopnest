@@ -1,5 +1,9 @@
 # Development status
 
+## Phase 17 — ephemeral privacy backend (verification in progress)
+
+Implemented server-stamped per-conversation expiry, backend denial at deadlines, recipient-only atomic one-time photo delivery, direct Storage denial for one-time media, expiry-aware moderation and cleanup, and thirty-day private delivery tombstones that preserve quotas/idempotency without retaining content. History now supplies server time for conservative monotonic client expiry. Existing content remains unchanged. See `EPHEMERAL_PRIVACY.md`. Database/handler regressions and full-service verification are in progress; the client controls/viewer, scheduled maintenance and visual redesign follow in separate tested phases.
+
 ## Phase 16 — dependency security fixes
 
 Updated Forge to the published 1.4.2 fix, scoped Expo CLI to Zod 4.6.7 with real-module compatibility regressions, and addressed the newly reported deepmerge issue with a documented, minimal local security fork scoped to Expo config. The original high findings and the fresh low finding no longer appear in npm audit; it reports zero known vulnerabilities. The private fork is maintained/tested source, not independently audited by npm. Added a CI audit gate at every severity and a real localhost Expo startup/status/stop smoke check. All 51 local tests pass, including seven focused security/compatibility regressions. Aligned Expo 58.0.20, Router 58.0.27 and FileSystem 58.0.12; SDK compatibility and all 20 Expo Doctor checks pass.

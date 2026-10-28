@@ -7,6 +7,7 @@ export function createPhotoUploadApi(client: () => SupabaseClient) {
       conversationId: string,
       bytes: ArrayBuffer,
       expectedActor: string,
+      oneTime = false,
     ): Promise<string> {
       if (bytes.byteLength < 1 || bytes.byteLength > 1048576)
         throw new UserFacingError('invalid_photo');
@@ -17,7 +18,12 @@ export function createPhotoUploadApi(client: () => SupabaseClient) {
       if (!session) throw new UserFacingError('auth_required');
       if (session.user.id !== expectedActor) throw new Error('Session changed');
       const reserved = await client()
-        .rpc('reserve_photo', { cid: uuid(conversationId) })
+        .rpc(
+          oneTime ? 'reserve_private_photo' : 'reserve_photo',
+          oneTime
+            ? { cid: uuid(conversationId), one_time: true, expected_actor: expectedActor }
+            : { cid: uuid(conversationId) },
+        )
         .single();
       if (reserved.error) throw reserved.error;
       const asset = reserved.data as { id: string; owner_id: string } | null;

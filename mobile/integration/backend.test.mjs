@@ -126,9 +126,14 @@ test(
       let reportedMessageId;
       let laterReport;
       const jpeg = readFileSync(new URL('./fixtures/pixel.jpg', import.meta.url));
-      async function validatedAsset(actor) {
+      async function validatedAsset(actor, oneTime = false) {
         const bytes = jpeg.buffer.slice(jpeg.byteOffset, jpeg.byteOffset + jpeg.byteLength);
-        const id = await createPhotoUploadApi(() => actor.client).upload(cid, bytes, actor.id);
+        const id = await createPhotoUploadApi(() => actor.client).upload(
+          cid,
+          bytes,
+          actor.id,
+          oneTime,
+        );
         const asset = await admin
           .from('photo_assets')
           .select('id,path,validated_at')
@@ -310,6 +315,92 @@ test(
               rotated.data.session.refresh_token !== oldRefresh,
             'refresh token rotates',
           );
+        },
+      );
+      await t.test(
+        'expiration and one-time delivery resist direct downloads, concurrent reopens and stale retries',
+        async () => {
+          await assert.rejects(eve.api.setRetention(cid, 3600, eve.id));
+          await alice.api.setRetention(cid, 3600, alice.id);
+          const expiredId = randomUUID();
+          await alice.api.send(cid, expiredId, 'temporary synthetic text', alice.id);
+          const timed = await validatedAsset(alice);
+          const timedId = randomUUID();
+          await alice.api.send(cid, timedId, '', alice.id, timed.id);
+          ok(
+            (
+              await admin
+                .from('messages')
+                .update({ expires_at: new Date(Date.now() - 1000).toISOString() })
+                .in('id', [expiredId, timedId])
+            ).error,
+            'expire synthetic fixtures',
+          );
+          assert.ok(
+            !(await alice.api.messages(cid)).some((m) => m.id === expiredId || m.id === timedId),
+          );
+          assert.ok(
+            !(await bob.api.messages(cid)).some((m) => m.id === expiredId || m.id === timedId),
+          );
+          for (const actor of [alice, bob])
+            assert.ok(
+              (await actor.client.storage.from('chat-photos').download(timed.path)).error,
+              'expired bytes denied',
+            );
+          ok((await admin.rpc('purge_expired_messages')).error, 'purge expired text');
+          await assert.rejects(
+            alice.api.send(cid, expiredId, 'temporary synthetic text', alice.id),
+          );
+          assert.ok((await bob.client.rpc('purge_expired_messages')).error);
+          const once = await validatedAsset(alice, true);
+          await alice.api.send(cid, randomUUID(), '', alice.id, once.id);
+          for (const actor of [alice, bob, eve]) {
+            assert.ok(
+              (await actor.client.storage.from('chat-photos').download(once.path)).error,
+              'ordinary one-time download denied',
+            );
+            assert.ok(
+              (
+                await actor.client.rpc('claim_one_time_photo', {
+                  asset_id: once.id,
+                  actor: actor.id,
+                })
+              ).error,
+            );
+          }
+          const open = (actor) =>
+            actor.client.functions.invoke('open-photo', { body: { asset_id: once.id } });
+          for (const actor of [alice, eve]) assert.equal((await open(actor)).response.status, 404);
+          const openings = await Promise.all([open(bob), open(bob)]);
+          assert.deepEqual(openings.map((r) => r.response.status).sort(), [200, 404]);
+          const delivered = openings.find((r) => !r.error);
+          const decoded = jpegCodec.decode(new Uint8Array(await delivered.data.arrayBuffer()));
+          assert.equal(decoded.width, 1);
+          assert.match(delivered.response.headers.get('cache-control'), /no-store/);
+          assert.equal((await open(bob)).response.status, 404);
+          ok(
+            (
+              await admin
+                .from('photo_assets')
+                .update({ opened_at: new Date(Date.now() - 360000).toISOString() })
+                .eq('id', once.id)
+            ).error,
+            'age opened fixture for cleanup',
+          );
+          const result = await cleanAbandonedPhotos(admin, { apply: true });
+          assert.equal(result.removed, 2, 'expired and consumed media physically removed');
+          assert.ok((await admin.storage.from('chat-photos').download(timed.path)).error);
+          assert.ok((await admin.storage.from('chat-photos').download(once.path)).error);
+          ok(
+            (
+              await admin
+                .from('conversations')
+                .update({ retention_changed_at: new Date(Date.now() - 60000).toISOString() })
+                .eq('id', cid)
+            ).error,
+            'age settings fixture',
+          );
+          await bob.api.setRetention(cid, null, bob.id);
         },
       );
       await t.test(
