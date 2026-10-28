@@ -23,8 +23,10 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
       - run: npm ci
+      - run: npm run audit:dependencies
       - run: npm run check
       - run: npm run format:check
+      - run: npm run test:dev-server
       - run: npx expo export --platform android --platform ios
   backend-integration:
     runs-on: ubuntu-latest

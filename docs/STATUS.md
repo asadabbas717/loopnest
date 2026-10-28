@@ -1,5 +1,9 @@
 # Development status
 
+## Phase 16 — dependency security fixes (verification in progress)
+
+Updated Forge to the published 1.4.2 fix, scoped Expo CLI to Zod 4.6.7 with real-module compatibility regressions, and addressed the newly reported deepmerge issue with a documented, minimal local security fork scoped to Expo config. The original high findings and the fresh low finding no longer appear in npm audit; it reports zero known vulnerabilities. The private fork is maintained/tested source, not independently audited by npm. Added a CI audit gate at every severity and a real localhost Expo startup/status/stop smoke check. All 51 local tests pass, including seven focused security/compatibility regressions. Aligned Expo 58.0.20, Router 58.0.27 and FileSystem 58.0.12; SDK compatibility and all 20 Expo Doctor checks pass. The temporary smoke server was stopped; no Docker engine or hosted backend change was needed. Final platform/native checks and clean-install/backend CI are pending. See `DEPENDENCY_SECURITY_FIXES.md` for the exact changes, provenance, limitations and maintenance obligations.
+
 ## Phase 15 — Expo SDK 58 upgrade
 
 The owner reports both phones updated to Expo Go 58.0.2 and can no longer load the SDK 57 app. Upgraded to Expo 58.0.19 / Router 58.0.26, React Native 0.88.0, React/React DOM 19.3.0 and SDK-compatible native modules. Removed the unused decoder workaround because the new router no longer consumes its legacy parser. Regenerated the ignored Android project and verified the existing permission exclusions remain. No application API changes were needed.

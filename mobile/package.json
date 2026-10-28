@@ -22,20 +22,22 @@
     "lint": "expo lint",
     "test": "node --test tests/*.test.mjs",
     "check": "npm run typecheck && npm run lint && npm test",
+    "audit:dependencies": "npm audit --audit-level=low",
+    "test:dev-server": "node scripts/check-dev-server.mjs",
     "format": "prettier --write src tests scripts integration ../supabase/functions app.config.ts eslint.config.js",
     "format:check": "prettier --check src tests scripts integration ../supabase/functions app.config.ts eslint.config.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
-    "expo": "~58.0.19",
+    "expo": "~58.0.20",
     "expo-constants": "~58.0.13",
     "expo-crypto": "~58.0.7",
-    "expo-file-system": "~58.0.11",
+    "expo-file-system": "~58.0.12",
     "expo-image": "~58.0.17",
     "expo-image-manipulator": "~58.0.15",
     "expo-image-picker": "~58.0.10",
     "expo-linking": "~58.0.14",
-    "expo-router": "~58.0.26",
+    "expo-router": "~58.0.27",
     "expo-screen-capture": "~58.0.6",
     "expo-secure-store": "~58.0.2",
     "expo-status-bar": "~58.0.4",
@@ -57,6 +59,15 @@
     "jpeg-js": "0.4.4",
     "prettier": "^3.9.9",
     "supabase": "2.121.0",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "deepmerge": "file:vendor/deepmerge"
+  },
+  "overrides": {
+    "@expo/cli": {
+      "zod": "4.6.7"
+    },
+    "@expo/config": {
+      "deepmerge": "$deepmerge"
+    }
   }
 }

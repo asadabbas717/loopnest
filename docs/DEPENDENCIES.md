@@ -1,5 +1,9 @@
 # Dependency review — October 21, 2026
 
+## Security fixes — October 28, 2026
+
+The previous Forge/Zod findings are addressed with Forge 1.4.2 and a scoped, compatibility-tested Expo CLI Zod 4.6.7 override. The fresh deepmerge advisory is addressed by a minimal documented local fork scoped to Expo config, with source provenance, preserved license and adversarial/real-config regressions. npm audit now reports zero known vulnerabilities; it does not independently audit our private fork. A new CI audit gate rejects reported advisories at any severity. See `DEPENDENCY_SECURITY_FIXES.md` and `STATUS.md` for verification, scope and maintenance requirements. Earlier inventories below are historical and are not the current dependency status.
+
 ## SDK 58 review — October 26, 2026
 
 Upgraded to Expo 58.0.19 / Router 58.0.26, React Native 0.88.0 and React 19.3.0 with SDK-compatible modules. The SDK 58 router no longer depends on `query-string`; the installed tree/lockfile contain neither that package nor `decode-uri-component`. Removed the local decoder dependency, override, compatibility source and its two now-obsolete package tests. No custom parser replacement is needed. React DOM is explicitly aligned to 19.3.0 to avoid the resolver selecting a peer-incompatible patch.
