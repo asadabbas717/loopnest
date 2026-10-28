@@ -1,8 +1,11 @@
-import type { ComponentProps, PropsWithChildren } from 'react';
+import { useState, type ComponentProps, type PropsWithChildren } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { fonts, palette } from './theme';
+import { Image } from 'expo-image';
+import { backendUrl, publicKey } from '../lib/client';
+import { useSession } from '../providers/Session';
 
 export type IconName = ComponentProps<typeof Feather>['name'];
 export function Icon({
@@ -51,18 +54,19 @@ export function Avatar({
   name,
   size = 48,
   self = false,
+  userId,
+  photoId,
 }: {
   name: string;
   size?: number;
   self?: boolean;
+  userId?: string;
+  photoId?: string | null;
 }) {
-  const letters = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => [...word][0] ?? '')
-    .join('')
-    .toUpperCase();
+  const letters = [...name.trim()][0]?.toUpperCase() ?? '?';
+  const { session } = useSession();
+  const [failed, setFailed] = useState('');
+  const path = userId && photoId ? `${userId}/${photoId}.jpg` : '';
   return (
     <View
       style={{
@@ -74,6 +78,7 @@ export function Avatar({
         borderColor: self ? '#425B31' : '#2A4D55',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
       }}
     >
       <Text
@@ -85,6 +90,20 @@ export function Avatar({
       >
         {letters || '?'}
       </Text>
+      {!!path && session && failed !== path && (
+        <Image
+          source={{
+            uri: `${backendUrl}/storage/v1/object/authenticated/profile-photos/${path}`,
+            headers: { Authorization: `Bearer ${session.access_token}`, apikey: publicKey },
+          }}
+          style={StyleSheet.absoluteFill}
+          cachePolicy="none"
+          recyclingKey={path}
+          contentFit="cover"
+          accessibilityLabel={`${name}'s profile photo`}
+          onError={() => setFailed(path)}
+        />
+      )}
     </View>
   );
 }

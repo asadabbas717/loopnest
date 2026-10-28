@@ -45,6 +45,9 @@ export default function Chat() {
   const [chat, setChat] = useState<Conversation | null>(null);
   const [name, setName] = useState('Conversation');
   const [handle, setHandle] = useState('');
+  const [peerAvatar, setPeerAvatar] = useState<{ id: string; avatar_id: string | null } | null>(
+    null,
+  );
   const [tools, setTools] = useState(false);
   const [savedSetting, setSavedSetting] = useState('');
   const [bottomRevision, setBottomRevision] = useState(0);
@@ -68,12 +71,20 @@ export default function Chat() {
   const reload = useCallback(async () => {
     const current = await conversation(id);
     setChat(current);
+    if (current && actor) {
+      const peer = await peerProfile(
+        current.initiator === actor ? current.recipient : current.initiator,
+      );
+      setPeerAvatar(peer);
+      setName(peer?.display_name ?? 'Conversation');
+      setHandle(peer?.username ?? '');
+    }
     if (!current || current.status !== 'accepted') {
       setRows([]);
       return;
     }
     refreshRef.current?.();
-  }, [id]);
+  }, [id, actor]);
   useEffect(() => {
     const listener = AppState.addEventListener('change', (state) => {
       setForeground(state === 'active');
@@ -110,6 +121,7 @@ export default function Chat() {
           const peer = await peerProfile(other);
           if (active) setName(peer?.display_name ?? 'Conversation');
           if (active) setHandle(peer?.username ?? '');
+          if (active) setPeerAvatar(peer);
           if (current.status === 'accepted') {
             const history = await messages(id);
             if (active) setRows(history);
@@ -237,7 +249,7 @@ export default function Chat() {
     <Page scrollReady={!!chat && !loading && foreground} startAtEnd bottomRevision={bottomRevision}>
       <View style={[visual.between, { marginBottom: 20 }]}>
         <View style={[visual.row, { flex: 1 }]}>
-          <Avatar name={name} />
+          <Avatar name={name} userId={peerAvatar?.id} photoId={peerAvatar?.avatar_id} />
           <View style={{ flex: 1, gap: 5 }}>
             <Text
               numberOfLines={1}

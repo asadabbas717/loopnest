@@ -3,7 +3,11 @@ export const errorMessages = {
   clear_unavailable:
     'Chat clearing is pending or unavailable. Retry Clear chat to finish removing its photos and messages.',
   avatar_unavailable:
-    'The profile photo could not be updated. Check your connection and try again.',
+    'The profile-photo update or cleanup could not finish. Refresh your account, then retry.',
+  avatar_invalid_photo:
+    'Choose another profile photo. It must fit within 320 pixels and 256 KB after resizing.',
+  clear_invalid_request:
+    'The clear-chat request is invalid. Reopen conversation settings and confirm Clear chat again.',
   one_time_unavailable:
     'This one-time photo is no longer available. It may have been opened or expired.',
   photo_delivery_unavailable:
@@ -50,6 +54,11 @@ const authMessages: Record<string, string> = {
   bad_jwt: errorMessages.auth_required,
 };
 const databaseMessages: Record<string, string> = {
+  'Avatar limit reached':
+    'Profile-photo limit reached. Up to 5 upload attempts per day are allowed. Remove/reset your photo to clean up old uploads.',
+  'Avatar image too large':
+    'Choose a smaller profile photo. Profile photos must fit within 256 KB after resizing.',
+  'Chat clearing': 'This chat is being cleared. Wait for it to finish before sending.',
   'Message expired':
     'This message has expired and cannot be resent using the old attempt. Write a new message if you want to send it again.',
   'Invalid disappearing duration': 'Choose whole hours or days, from 1 hour up to 30 days.',

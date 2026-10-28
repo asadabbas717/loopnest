@@ -13,10 +13,14 @@ type Codec = {
   ) => Pixels;
   encode: (pixels: Pixels, quality: number) => { data: Uint8Array };
 };
-export function sanitizePhoto(bytes: Uint8Array, codec: Codec): Uint8Array {
+export function sanitizePhoto(
+  bytes: Uint8Array,
+  codec: Codec,
+  limits = { dimension: 1280, bytes: maxPhotoBytes },
+): Uint8Array {
   if (
     bytes.length < 4 ||
-    bytes.length > maxPhotoBytes ||
+    bytes.length > limits.bytes ||
     bytes[0] !== 255 ||
     bytes[1] !== 216
   )
@@ -48,8 +52,8 @@ export function sanitizePhoto(bytes: Uint8Array, codec: Codec): Uint8Array {
         bytes[offset + 2] !== 8 ||
         width < 1 ||
         height < 1 ||
-        width > 1280 ||
-        height > 1280
+        width > limits.dimension ||
+        height > limits.dimension
       )
         throw new Error("Invalid photo");
       found = true;
@@ -68,8 +72,8 @@ export function sanitizePhoto(bytes: Uint8Array, codec: Codec): Uint8Array {
   if (
     decoded.width < 1 ||
     decoded.height < 1 ||
-    decoded.width > 1280 ||
-    decoded.height > 1280 ||
+    decoded.width > limits.dimension ||
+    decoded.height > limits.dimension ||
     decoded.data.length !== decoded.width * decoded.height * 4
   )
     throw new Error("Invalid photo");
@@ -79,7 +83,7 @@ export function sanitizePhoto(bytes: Uint8Array, codec: Codec): Uint8Array {
     { width: decoded.width, height: decoded.height, data: decoded.data },
     70,
   ).data;
-  if (output.length < 4 || output.length > maxPhotoBytes)
+  if (output.length < 4 || output.length > limits.bytes)
     throw new Error("Invalid photo");
   return new Uint8Array(output);
 }

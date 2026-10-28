@@ -5,7 +5,8 @@ import { backend } from './client';
 import { createPhotoUploadApi } from './photo-upload-api';
 
 export type Photo = { uri: string; size: number };
-export async function choosePhoto(): Promise<Photo | null> {
+export async function choosePhoto(maxDimension = 1280): Promise<Photo | null> {
+  if (![320, 1280].includes(maxDimension)) throw new Error('Invalid photo dimension.');
   const result = await launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsMultipleSelection: false,
@@ -26,8 +27,8 @@ export async function choosePhoto(): Promise<Photo | null> {
   try {
     context.resize(
       asset.width >= asset.height
-        ? { width: Math.min(asset.width, 1280) }
-        : { height: Math.min(asset.height, 1280) },
+        ? { width: Math.min(asset.width, maxDimension) }
+        : { height: Math.min(asset.height, maxDimension) },
     );
     rendered = await context.renderAsync();
     const output = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: 0.7 });

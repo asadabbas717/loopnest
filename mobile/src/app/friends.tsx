@@ -141,7 +141,7 @@ export default function Friends() {
       {rows.map((peer) => (
         <View key={peer.user_id} style={styles.card}>
           <View style={visual.row}>
-            <Avatar name={peer.display_name} />
+            <Avatar name={peer.display_name} userId={peer.user_id} photoId={peer.avatar_id} />
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={[styles.label, { fontSize: 18 }]}>{peer.display_name}</Text>
               <Text style={visual.small}>@{peer.username}</Text>

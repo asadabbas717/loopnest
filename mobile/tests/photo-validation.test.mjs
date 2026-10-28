@@ -9,6 +9,15 @@ const original = jpeg.encode(
   70,
 ).data;
 
+test('profile-photo codec enforces smaller trusted dimensions and byte bounds', () => {
+  const limits = { dimension: 320, bytes: 262144 };
+  assert.ok(sanitizePhoto(original, jpeg, limits).length < 262144);
+  assert.throws(() => sanitizePhoto(Buffer.alloc(262145), jpeg, limits));
+  const wide = jpeg.encode({ width: 321, height: 1, data: Buffer.alloc(321 * 4, 255) }, 70).data;
+  assert.throws(() => sanitizePhoto(wide, jpeg, limits));
+  assert.ok(sanitizePhoto(wide, jpeg).length > 0, 'ordinary chat dimensions remain supported');
+});
+
 test('trusted photo codec decodes and re-encodes pixels without EXIF, comments or trailing payload', () => {
   const exif = Buffer.from('Exif\0\0PRIVATE-GPS-METADATA');
   const size = exif.length + 2;

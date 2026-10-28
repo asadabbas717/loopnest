@@ -26,7 +26,7 @@ export function clearChatHandler(deps: Deps) {
       const actor = await deps.actor(token);
       if (!actor) return reply(401, "auth_required");
       const reader = request.body?.getReader();
-      if (!reader) return reply(400, "invalid_confirmation");
+      if (!reader) return reply(400, "clear_invalid_request");
       let size = 0;
       const chunks: Uint8Array[] = [];
       try {
@@ -36,7 +36,7 @@ export function clearChatHandler(deps: Deps) {
           size += part.value.length;
           if (size > 512) {
             await reader.cancel();
-            return reply(413, "invalid_confirmation");
+            return reply(413, "clear_invalid_request");
           }
           chunks.push(part.value);
         }
@@ -51,7 +51,7 @@ export function clearChatHandler(deps: Deps) {
           ),
         );
       } catch {
-        return reply(400, "invalid_confirmation");
+        return reply(400, "clear_invalid_request");
       }
       const uuid =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -67,7 +67,7 @@ export function clearChatHandler(deps: Deps) {
         !uuid.test(body.request_id) ||
         body.confirmation !== "CLEAR"
       )
-        return reply(400, "invalid_confirmation");
+        return reply(400, "clear_invalid_request");
       const job = await deps.begin(
         body.conversation_id,
         actor,

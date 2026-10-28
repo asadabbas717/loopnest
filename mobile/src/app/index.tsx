@@ -119,7 +119,13 @@ export default function Home() {
     <Page dock="chats" scrollReady={listed?.actor === userId}>
       <View style={[visual.between, { marginBottom: 24 }]}>
         <View style={visual.row}>
-          <Avatar name={profile.display_name} size={42} self />
+          <Avatar
+            name={profile.display_name}
+            size={42}
+            self
+            userId={profile.id}
+            photoId={profile.avatar_id}
+          />
           <View>
             <Text style={visual.eyebrow}>YOUR SPACE</Text>
             <Text style={{ color: palette.ink, fontFamily: fonts.medium, fontSize: 15 }}>
@@ -228,7 +234,11 @@ export default function Home() {
               },
             ]}
           >
-            <Avatar name={item.peer_display_name} />
+            <Avatar
+              name={item.peer_display_name}
+              userId={item.initiator === userId ? item.recipient : item.initiator}
+              photoId={item.peer_avatar_id}
+            />
             <View style={{ flex: 1, gap: 5 }}>
               <Text
                 numberOfLines={1}

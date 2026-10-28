@@ -4,7 +4,12 @@ import { createFriendsApi } from './friends-api.ts';
 import { UserFacingError } from '../domain/user-errors.ts';
 import { expirationDeadline } from '../domain/ephemeral.ts';
 import { invokePrivate } from './private-function.ts';
-export type Profile = { id: string; username: string; display_name: string };
+export type Profile = {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_id: string | null;
+};
 export type Conversation = {
   id: string;
   initiator: string;
@@ -29,13 +34,14 @@ export type Message = {
 export type ConversationSummary = Conversation & {
   peer_display_name: string;
   peer_username: string;
+  peer_avatar_id: string | null;
 };
 
 export function createChatApi(backend: () => SupabaseClient) {
   async function ownProfile(id: string): Promise<Profile | null> {
     const { data, error } = await backend()
       .from('profiles')
-      .select('id,username,display_name')
+      .select('id,username,display_name,avatar_id')
       .eq('id', id)
       .maybeSingle();
     if (error) throw error;
@@ -69,7 +75,7 @@ export function createChatApi(backend: () => SupabaseClient) {
     );
     const profiles = await backend()
       .from('profiles')
-      .select('id,username,display_name')
+      .select('id,username,display_name,avatar_id')
       .in('id', peerIds);
     if (profiles.error) throw profiles.error;
     const names = new Map((profiles.data as Profile[]).map((peer) => [peer.id, peer]));
@@ -77,6 +83,7 @@ export function createChatApi(backend: () => SupabaseClient) {
       ...row,
       peer_display_name: names.get(peerIds[index]!)?.display_name ?? 'Unavailable contact',
       peer_username: names.get(peerIds[index]!)?.username ?? '',
+      peer_avatar_id: names.get(peerIds[index]!)?.avatar_id ?? null,
     }));
   }
   async function conversation(id: string): Promise<Conversation | null> {

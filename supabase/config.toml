@@ -63,3 +63,7 @@ verify_jwt = false
 [functions.clear-chat]
 # Explicit Auth.getUser; client IDs never select an actor.
 verify_jwt = false
+
+[functions.profile-photo]
+# Explicit Auth.getUser and rate-limited, one-use upload claims.
+verify_jwt = false

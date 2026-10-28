@@ -56,6 +56,7 @@ export function Page({
   const restoring = useRef(true);
   const contentHeight = useRef(0);
   const viewport = useRef(0);
+  const followingEnd = useRef(false);
   const restore = useCallback(() => {
     if (
       !scrollReady ||
@@ -90,6 +91,7 @@ export function Page({
   }, [restore, scrollReady]);
   useEffect(() => {
     if (bottomRevision > 0) {
+      followingEnd.current = true;
       const frame = requestAnimationFrame(() => scroll.current?.scrollToEnd({ animated: false }));
       return () => cancelAnimationFrame(frame);
     }
@@ -175,12 +177,21 @@ export function Page({
           restore();
         }}
         onContentSizeChange={(_width, height) => {
+          const grew = height > contentHeight.current;
           contentHeight.current = height;
           restore();
+          if (grew && startAtEnd && followingEnd.current && scrollReady && focused.current)
+            scroll.current?.scrollToEnd({ animated: false });
         }}
         onScroll={(event) => {
           if (focused.current && scrollReady && !restoring.current)
             memory?.set(path, event.nativeEvent.contentOffset.y);
+          if (focused.current && scrollReady)
+            followingEnd.current =
+              event.nativeEvent.contentSize.height -
+                event.nativeEvent.layoutMeasurement.height -
+                event.nativeEvent.contentOffset.y <
+              80;
         }}
         scrollEventThrottle={32}
         style={{ flex: 1 }}

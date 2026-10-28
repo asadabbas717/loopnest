@@ -9,6 +9,9 @@ import { createModerationApi } from '../lib/moderation-api';
 import { userErrorMessage, errorMessages } from '../domain/user-errors';
 import { Button, Field, Heading, Loading, Notice, Page, styles, useAction } from '../components/ui';
 import { Avatar, Badge, visual } from '../components/visuals';
+import { createAvatarApi } from '../lib/avatar-api';
+import { choosePhoto, discardPhoto } from '../lib/photos';
+import { File } from 'expo-file-system';
 
 export default function Account() {
   const { session, profile, loading, refresh, accountState } = useSession();
@@ -39,7 +42,7 @@ export default function Account() {
   );
   if (loading || !session)
     return (
-      <Page>
+      <Page scrollReady={false}>
         <Loading />
       </Page>
     );
@@ -51,7 +54,13 @@ export default function Account() {
         subtitle="A few things that stay in your control."
       />
       <View style={[styles.card, visual.row]}>
-        <Avatar name={profile?.display_name ?? 'You'} self size={56} />
+        <Avatar
+          name={profile?.display_name ?? 'You'}
+          self
+          size={56}
+          userId={profile?.id}
+          photoId={profile?.avatar_id}
+        />
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={[styles.label, { fontSize: 21 }]}>
             {profile?.display_name ?? 'Your account'}
@@ -61,6 +70,61 @@ export default function Account() {
           </Text>
         </View>
       </View>
+      {accountState === 'active' && (
+        <View style={[styles.card, { marginBottom: 20 }]}>
+          <Text style={styles.label}>Your profile photo</Text>
+          <Text style={visual.small}>
+            Visible only to you and accepted, unblocked contacts. Without a photo, your first-name
+            initial is shown.
+          </Text>
+          <Button
+            title={profile?.avatar_id ? 'Change profile photo' : 'Add profile photo'}
+            icon="image"
+            disabled={busy}
+            onPress={() =>
+              run(async () => {
+                const actor = session.user.id;
+                const selected = await choosePhoto(320);
+                if (!selected) return;
+                try {
+                  await createAvatarApi(backend).upload(
+                    actor,
+                    await new File(selected.uri).arrayBuffer(),
+                  );
+                  refresh();
+                } finally {
+                  discardPhoto(selected);
+                }
+              })
+            }
+          />
+          <Button
+            title="Remove / reset profile photo"
+            icon="x"
+            secondary
+            disabled={busy}
+            onPress={() =>
+              Alert.alert(
+                'Remove profile photo?',
+                'Your contacts will see your first-name initial. This also cleans up failed profile-photo uploads.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: () =>
+                      run(async () => {
+                        await createAvatarApi(backend).remove(session.user.id);
+                        refresh();
+                      }),
+                  },
+                ],
+              )
+            }
+          />
+          {!deleting && <Notice text={error} />}
+        </View>
+      )}
       {accountState === 'active' && (
         <Button
           title="Friends and blocked users"

@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import { accountErasureHandler } from "../_shared/erasure.ts";
+import { cleanRetiredAvatars } from "../_shared/avatar-cleanup.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const publicKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -52,6 +53,9 @@ Deno.serve(
       if (error) throw new Error("Storage removal failed");
     },
     async deleteUser(id) {
+      // The account is already frozen. Remove profile bytes before Auth cascades
+      // their metadata, using the same profile lock as trusted avatar uploads.
+      await cleanRetiredAvatars(admin, id, true);
       const { error } = await admin.auth.admin.deleteUser(id);
       if (error) throw new Error("Auth deletion failed");
     },

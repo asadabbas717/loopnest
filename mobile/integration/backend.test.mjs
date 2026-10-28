@@ -14,6 +14,7 @@ import { createFriendsApi } from '../src/lib/friends-api.ts';
 import { createAccountApi } from '../src/lib/account-api.ts';
 import { userErrorMessage } from '../src/domain/user-errors.ts';
 import { createPhotoUploadApi } from '../src/lib/photo-upload-api.ts';
+import { createAvatarApi } from '../src/lib/avatar-api.ts';
 import jpegCodec from 'jpeg-js';
 
 // Never accepts a URL/admin key from environment variables. The runner obtains
@@ -34,6 +35,7 @@ test(
     const clients = [];
     const users = [];
     const paths = [];
+    const avatarPaths = [];
     const make = () => {
       const client = createClient(local.url, local.key, options);
       clients.push(client);
@@ -150,6 +152,57 @@ test(
         return asset.data;
       }
       let peerPhotoPath;
+      let ownerAvatarPath;
+      await t.test(
+        'private profile photos validate bytes, restrict peers and physically remove replaced media',
+        async () => {
+          const api = createAvatarApi(() => alice.client);
+          const bytes = jpeg.buffer.slice(jpeg.byteOffset, jpeg.byteOffset + jpeg.byteLength);
+          await api.upload(alice.id, bytes);
+          const first = (await alice.api.ownProfile(alice.id)).avatar_id;
+          const firstPath = `${alice.id}/${first}.jpg`;
+          avatarPaths.push(firstPath);
+          ok(
+            (await bob.client.storage.from('profile-photos').download(firstPath)).error,
+            'accepted contact can view avatar',
+          );
+          assert.ok(
+            (await eve.client.storage.from('profile-photos').download(firstPath)).error,
+            'outsider cannot view avatar',
+          );
+          assert.ok(
+            (
+              await alice.client.storage
+                .from('profile-photos')
+                .upload(`${alice.id}/${randomUUID()}.jpg`, bytes, { contentType: 'image/jpeg' })
+            ).error,
+            'direct unvalidated uploads denied',
+          );
+          assert.ok(
+            (await bob.client.rpc('claim_avatar_upload', { asset_id: first, actor: alice.id }))
+              .error,
+            'untrusted claims denied',
+          );
+          await api.upload(alice.id, bytes);
+          const second = (await alice.api.ownProfile(alice.id)).avatar_id;
+          const secondPath = `${alice.id}/${second}.jpg`;
+          avatarPaths.push(secondPath);
+          assert.notEqual(first, second);
+          assert.ok(
+            (await admin.storage.from('profile-photos').download(firstPath)).error,
+            'replaced bytes physically removed',
+          );
+          await api.remove(alice.id);
+          assert.equal((await alice.api.ownProfile(alice.id)).avatar_id, null);
+          assert.ok(
+            (await admin.storage.from('profile-photos').download(secondPath)).error,
+            'removed bytes physically deleted',
+          );
+          await api.upload(alice.id, bytes);
+          ownerAvatarPath = `${alice.id}/${(await alice.api.ownProfile(alice.id)).avatar_id}.jpg`;
+          avatarPaths.push(ownerAvatarPath);
+        },
+      );
       await t.test(
         'private Storage enforces path ownership, byte/MIME limits and authenticated downloads',
         async () => {
@@ -606,6 +659,10 @@ test(
       await t.test('blocking revokes API access and prevents new messages/photos', async () => {
         await bob.api.blockUser(bob.id, alice.id);
         assert.equal((await alice.api.messages(cid)).length, 0);
+        assert.ok(
+          (await bob.client.storage.from('profile-photos').download(ownerAvatarPath)).error,
+          'blocking revokes profile-photo bytes',
+        );
         assert.equal((await bob.api.messages(cid)).length, 0);
         assert.equal(await alice.api.conversation(cid), null);
         await assert.rejects(alice.api.send(cid, randomUUID(), 'blocked', alice.id));
@@ -777,6 +834,10 @@ test(
           users.splice(users.indexOf(alice.id), 1);
           assert.ok((await admin.auth.admin.getUserById(alice.id)).error, 'auth account removed');
           assert.ok(
+            (await admin.storage.from('profile-photos').download(ownerAvatarPath)).error,
+            'profile bytes removed before Auth erasure',
+          );
+          assert.ok(
             (await admin.storage.from('chat-photos').download(path)).error,
             'owner media physically removed',
           );
@@ -801,6 +862,11 @@ test(
       // Delete physical objects through Storage before deleting synthetic test accounts.
       if (paths.length)
         ok((await admin.storage.from('chat-photos').remove(paths)).error, 'fixture media cleanup');
+      if (avatarPaths.length)
+        ok(
+          (await admin.storage.from('profile-photos').remove(avatarPaths)).error,
+          'fixture avatar cleanup',
+        );
       for (const id of users)
         ok((await admin.auth.admin.deleteUser(id)).error, 'fixture user cleanup');
     }

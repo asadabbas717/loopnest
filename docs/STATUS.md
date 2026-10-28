@@ -1,5 +1,11 @@
 # Development status
 
+## Phase 21 — private profile pictures (verification in progress)
+
+Added optional private profile photos across Home, Friends, chat and Account, with a first-name initial fallback. Uploads use one-use reservations, trusted JPEG sanitization and smaller 320-pixel/256-KB limits. RLS permits only the current image to the owner and accepted, unblocked contacts. Replacement/removal revokes old reads before physical cleanup; failed cleanup is retryable. Private upload metadata preserves the five-per-day quota after cleanup. Account erasure now removes profile-photo bytes before Auth/metadata deletion, serialized against uploads. No public bucket, signed URL, paid service or new dependency was added. See `PRIVATE_AVATARS_AND_CLEAR_CHAT.md`.
+
+Strict typing/lint/formatting and 66 tests pass, including real PostgreSQL avatar policies, blocked/outsider denial, frozen upload denial, quota preservation, codec bounds and failure ordering. Added a real-service avatar upload/replacement/removal/erasure scenario. Full phase-21 CI and hosted deployment are pending. Phase-20 CI passed in [run 40709485825](https://github.com/asadabbas717/loopnest/actions/runs/40709485825), source `c45ead3`, including the real Storage clearing/retry scenario. Native layout, scroll and profile-photo acceptance still requires the owner's phones.
+
 ## Phase 20 — explicit shared-chat clearing (verification in progress)
 
 Added confirmed Clear chat for both people in conversation settings. The authenticated Edge endpoint binds the actor to Auth.getUser, verifies accepted/nonblocked participation, freezes writes and photo reads, removes physical objects through Storage, and only then deletes messages/assets/reports. The connection and retention setting remain. Private delivery tombstones prevent old send retries from restoring removed content and preserve quotas. Request IDs make retries idempotent, including a lost success response after fresh messages arrive. Failed cleanup remains frozen and retryable. No existing hosted chat is automatically cleared.
