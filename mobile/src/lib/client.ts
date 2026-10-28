@@ -1,4 +1,4 @@
-import { createClient, processLock } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { randomUUID } from 'expo-crypto';
 import { Platform } from 'react-native';
@@ -33,7 +33,6 @@ export const client = configured
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: false,
-        lock: processLock,
       },
     })
   : null;

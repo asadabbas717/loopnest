@@ -1,8 +1,16 @@
-import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type PropsWithChildren,
+} from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
 import { client } from '../lib/client';
 import { ownProfile, accountState, type Profile } from '../lib/api';
+import { createAuthState } from '../domain/auth-state';
 
 const Context = createContext<{
   session: Session | null;
@@ -31,37 +39,35 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [booting, setBooting] = useState(!!client);
   const [failed, setFailed] = useState(false);
   const [revision, setRevision] = useState(0);
+  const authState = useRef<ReturnType<typeof createAuthState<Session>> | null>(null);
   useEffect(() => {
     if (!client) return;
-    let active = true;
-    const { data } = client.auth.onAuthStateChange((_event, next) => {
-      if (active) {
+    const authClient = client.auth;
+    const scope = createAuthState<Session>({
+      onSession(next) {
         setSession(next);
         setFailed(false);
         setBooting(false);
-      }
-    });
-    client.auth
-      .getSession()
-      .then(({ data: result, error }) => {
-        if (!active) return;
-        if (error) setFailed(true);
-        else setSession(result.session);
+      },
+      onError() {
+        setFailed(true);
         setBooting(false);
-      })
-      .catch(() => {
-        if (active) {
-          setFailed(true);
-          setBooting(false);
-        }
-      });
+      },
+    });
+    authState.current = scope;
+    const { data } = client.auth.onAuthStateChange((_event, next) => scope.event(next));
+    void scope.read(async () => {
+      const { data, error } = await authClient.getSession();
+      return { session: data.session, error };
+    });
     if (AppState.currentState === 'active') client.auth.startAutoRefresh();
     const listener = AppState.addEventListener('change', (state) => {
       if (state === 'active') client?.auth.startAutoRefresh();
       else client?.auth.stopAutoRefresh();
     });
     return () => {
-      active = false;
+      scope.close();
+      if (authState.current === scope) authState.current = null;
       data.subscription.unsubscribe();
       listener.remove();
       client?.auth.stopAutoRefresh();
@@ -96,15 +102,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
           (!!userId && result?.uid === userId && result?.revision === revision && result.failed),
         refresh: () => {
           setRevision((value) => value + 1);
-          if (failed && client)
-            client.auth
-              .getSession()
-              .then(({ data, error }) => {
-                if (error) return;
-                setSession(data.session);
-                setFailed(false);
-              })
-              .catch(() => undefined);
+          if (failed && client) {
+            const authClient = client.auth;
+            void authState.current?.read(async () => {
+              const { data, error } = await authClient.getSession();
+              return { session: data.session, error };
+            });
+          }
         },
       }}
     >

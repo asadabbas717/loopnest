@@ -26,6 +26,7 @@ jobs:
       - run: npm run audit:dependencies
       - run: npm run check
       - run: npm run format:check
+      - run: npm run docs:check
       - run: npm run test:dev-server
       - run: npx expo export --platform android --platform ios
   backend-integration:

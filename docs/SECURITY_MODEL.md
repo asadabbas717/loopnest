@@ -1,13 +1,30 @@
 # Security model and boundaries
 
-Protect credentials, refresh tokens, messages, relationship metadata, and photos from anonymous callers and other authenticated users. Treat the mobile client, object paths, uploaded MIME labels, and all public API calls as untrusted. The Supabase publishable key is public by design; authorization must be enforced by Postgres RLS and Storage RLS. Never ship an admin key.
+Protect credentials, sessions, messages, relationships and media from anonymous callers and other authenticated accounts. Treat the client, public keys, object paths, MIME labels and request bodies as untrusted. Supabase Auth verifies identity; PostgreSQL and Storage policies enforce authorization. Service credentials remain in trusted server/operator environments.
 
-The implementation requires email-authenticated users, recipient acceptance before chat, participant-scoped message and photo access, bilateral blocking, immutable message identity, bounded content, private storage, and native credential storage. Objects have random names without emails or original filenames. The phone re-encodes selected images without requesting EXIF. Phase 12 adds trusted server-side decode/re-encode for new uploads and disables direct client writes; see `PHOTO_VALIDATION.md` for deployment evidence and boundaries. Previously shared photos remain legacy assets and are not retroactively asserted to be validated. Native picker/format behavior still needs broader device testing.
+## Identity and isolation
 
-This is **not end-to-end encryption**: the database operator and appropriately privileged infrastructure administrators can read server content. TLS and provider storage encryption do not change that. No custom cryptography will be described as secure messaging. E2EE, if required later, needs a vetted protocol, key verification, multi-device design, recovery policy, and independent review.
+The native app persists sessions only in the encrypted Keychain/Keystore adapter, using bounded chunks, commit-last manifests and serialized vault operations. There is no plaintext/web fallback. The installed Supabase SDK's default refresh coordination handles concurrent refreshes and guards against late writes after sign-out; the deprecated custom process lock is removed. App-level auth revisions also prevent late bootstrap/retry reads from replacing newer sign-out/account-change events. Recovery uses an isolated nonpersistent client.
 
-Short-lived file access, blocking, and deletion cannot revoke a recipient's downloaded copy, screenshot, or previously issued bearer URL immediately. Minimize local media caching and purge visible data on sign-out. Do not log content or tokens. Device compromise and malicious infrastructure administrators are outside the current protection boundary.
+The profile, conversation, message and Storage policies enforce accepted participants, disabled-account denial and bilateral blocks. UI hiding is supplementary. Session/account changes reset navigation and account-scoped scroll memory. No online-status directory, public profile-photo bucket or reusable signed media URL is introduced.
 
-Phase 11 adds native screenshot/recording prevention before private screens mount, Android secure-window protection for recent apps, iOS native inactive protection, and an opaque inactive cover. Failure to initialize protection keeps private screens hidden. This addresses a preview leak observed on the owner's Android device; the revised native behavior still needs device acceptance. Screenshot-detection listeners are not used, and generated Android builds explicitly block the module's unused media-read/detection permissions. Expo Go's host manifest is controlled by Expo. This visual control cannot revoke old snapshots or prevent someone photographing an unlocked display.
+## Content lifecycle
 
-Release gates: executable RLS/storage adversarial tests; device tests for session lifecycle, media metadata and logout; abuse reporting/moderation; account and object deletion; dependency review; SMTP delivery and rate limits; accessibility; recovery/backup procedures; and independent security review. Open-source publication does not establish a security guarantee.
+- New chat photos pass a trusted bounded JPEG decode/re-encode pipeline. Submitted EXIF/comments/trailing payload are discarded. Previously shared legacy photos are not retroactively asserted to be validated.
+- Expiration is stamped by the server. Message/photo access and moderator review deny expired content. Official clients use conservative server-anchored monotonic deadlines; physical deletion is operator-dependent.
+- One-time media can be claimed atomically by its recipient once. Delivery failure consumes the claim. The viewer keeps bytes in memory and closes on leaving, backgrounding or the earlier of sixty seconds and message expiry.
+- Profile photos have smaller byte/dimension limits, one-use reservations and current-photo-only access for the owner and accepted, unblocked contacts. Replacement/removal revokes old reads before cleanup.
+- Shared clearing and password-verified account erasure freeze writes, remove physical bytes through Storage, then finalize metadata. Clearing affects both participants; account erasure also removes the account's profile-photo bytes.
+- Private message-delivery and photo-quota receipts retain identifiers/times without content to prevent retry resurrection and quota resets. Metadata removal depends on the documented maintenance/activity passes. See [retention](PHOTO_MAINTENANCE.md).
+
+## Visual protection
+
+Native screenshot/recording prevention is enabled before private screens mount and remains outside navigation/session changes. Setup failure hides private screens. Inactive covers and iOS app-switcher protection supplement Android's secure window. No screenshot-detection permission or broad media-read permission is requested.
+
+The owner authorized `EXPO_PUBLIC_ALLOW_TEST_SCREENSHOTS=true` in local development for UI feedback. A visible banner and accurate copy identify the relaxed policy; screenshots and recording are enabled together. The default/example is false and release runtimes ignore it. A full Metro/Expo Go restart is required when changing it. Test normal capture protection with the flag off.
+
+An external camera, modified client/device, saved copy or content already delivered cannot be reliably recalled. The app is **not end-to-end encrypted**: privileged infrastructure/database operators can read server content. TLS, provider storage encryption and encrypted session persistence do not change that boundary. No custom cryptography is presented as secure messaging.
+
+## Release work
+
+See [verification gates](VERIFICATION.md): current two-phone/signed-build/iOS/accessibility acceptance, aggregate abuse and Free quota controls, monitored physical cleanup, dependency/fork maintenance, moderator/support/appeal procedures, backup/recovery policy and an independent security review. Open-source availability and passing tests do not establish a security certification.

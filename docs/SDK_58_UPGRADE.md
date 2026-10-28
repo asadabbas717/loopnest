@@ -1,5 +1,7 @@
 # Expo SDK 58 upgrade
 
+This document records the original major-version migration. Subsequent SDK 58 patch alignment, resolved dependency advisories, device evidence and current test counts are in [STATUS.md](STATUS.md) and [VERIFICATION.md](VERIFICATION.md); older version/audit counts below are historical.
+
 The owner reports both phones now run Expo Go 58.0.2, which cannot load the SDK 57 project. Upgrade the project to SDK 58 and align all installed Expo/native modules with its compatibility matrix. The Expo package patch version and the Expo Go client version are separate numbers; they need the same SDK major, not identical patch numbers.
 
 Reviewed the official [upgrade walkthrough](https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/), [SDK 58 release notes](https://expo.dev/changelog/sdk-58), [Router migration guide](https://docs.expo.dev/router/migrate/sdk-57-to-58/) and versioned screen-capture documentation. Native generation must use the new SDK. The old ignored Android project was verified to contain no tracked files and removed before regeneration. No handwritten native source is migrated.

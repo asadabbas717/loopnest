@@ -1,33 +1,55 @@
-# Backend setup
+# Supabase backend setup
 
-Use a **new, isolated Supabase Free project**. This rewrite does not migrate old Firebase users or data. The owner's dedicated test project has been configured; see `docs/STATUS.md` for deployment and acceptance evidence. Never paste database passwords or secret/service-role keys into the mobile app.
+Use a new, isolated **Supabase Free** project and synthetic content. This rewrite does not migrate Firebase accounts/data. The owner's dedicated project is configured; see [status](../docs/STATUS.md) for deployment evidence. Public repository readers must configure their own project.
 
 ## Hosted development
 
-1. Create a project in a Free organization. Verify the plan; do not select paid add-ons.
-2. Apply all files in `migrations/` in filename order using the project's SQL editor or the Supabase CLI migrations workflow. They create chat authorization, private storage, erasure and moderation. Apply each once; review before applying to an existing database. Deploy the deletion function using the steps in `docs/ACCOUNT_ERASURE.md`.
-3. In Auth settings keep **Confirm email enabled**, require passwords of at least 12 characters, and configure signup/sign-in limits. Configure both **Confirm signup** and **Reset password** email templates to include `{{ .Token }}`; the app accepts codes and does not consume email deep links. Matching templates are committed under `templates/`. Recovery uses an isolated session and signs out refresh sessions after changing the password. Test email delivery with addresses you own. Supabase's built-in email provider is restricted and not suitable for general public delivery. In this project's hosted Free setup, the service explicitly refused custom templates until a custom SMTP provider is configured. Use a provider within its free allowance; do not upgrade the Supabase plan or assume default link emails work with this app.
-4. Copy `mobile/.env.example` to `mobile/.env` and set the HTTPS project URL and **publishable** `sb_publishable_...` key. Restart Expo after changes. Legacy JWT anon keys and all secret keys are intentionally rejected. Public configuration is compiled into the app; RLS is the security boundary.
-5. Run the mobile checks. Use three synthetic accounts to test Alice/Bob conversation consent and Eve's denial. Do not use sensitive content until native media/session checks and hosted API tests pass.
+1. Create a project in a Free organization and keep paid add-ons disabled.
+2. Apply every file in `migrations/` in filename order, once, through the CLI migrations workflow or SQL editor. They enforce accepted membership, blocking, private media, server validation, expiry, shared clearing, private avatars, quotas, erasure and moderation. Add new migrations for changes; never rewrite already-applied history.
+3. Deploy **all five Edge Functions** from the repository root using the pinned CLI in `mobile/node_modules`: `upload-photo`, `open-photo`, `clear-chat`, `profile-photo` and `delete-account`. For a fresh project, the following is one example after operator login/linking:
 
-## Local development
+```bash
+cd mobile
+npx supabase --workdir .. login
+npx supabase --workdir .. link --project-ref YOUR_20_LETTER_PROJECT_REF
+npx supabase --workdir .. db push --dry-run
+# Review the target and pending migrations before applying.
+npx supabase --workdir .. db push
+npx supabase --workdir .. functions deploy delete-account
+npx supabase --workdir .. functions deploy upload-photo
+npx supabase --workdir .. functions deploy open-photo
+npx supabase --workdir .. functions deploy clear-chat
+npx supabase --workdir .. functions deploy profile-photo
+```
 
-Start Docker, then from `mobile` run `npm ci` and `npm run backend:start`. The CLI is pinned in the lockfile. This starts only the local services needed for development; no Supabase account, hosted project, SMTP provider or billing is required. Email confirmation stays enabled, and the committed email template sends codes into the local Mailpit inbox at `http://127.0.0.1:54324`.
+For an existing project, update account erasure before enabling new profile uploads so profile bytes are included in cleanup. Functions use platform service credentials only on the server. Their `verify_jwt=false` gateway setting delegates validation to explicit `Auth.getUser`; it is not anonymous authorization. Browser-origin requests are rejected.
 
-Run `npm run backend:env -- android` for an Android emulator or `npm run backend:env` for iOS Simulator. This writes an ignored `mobile/.env` using only a local public key and refuses to overwrite existing configuration. Android uses `10.0.2.2:54321`; iOS uses `127.0.0.1:54321`. Restart Expo. Local mode requires both `EXPO_PUBLIC_USE_LOCAL_BACKEND=true` and a development runtime; release bundles reject it. Only the three explicit loopback/emulator hosts on port 54321 are allowed. Arbitrary LAN hosts, paths, credentials in URLs, admin keys and non-debug local sessions are rejected. Android's generated debug manifest permits HTTP; the main manifest is not weakened. iOS allows local networking without allowing arbitrary insecure loads.
+4. Keep **Confirm email** enabled, require passwords of at least 12 characters and review Auth signup/email rate limits. Configure both confirmation and recovery templates to include `{{ .Token }}`; committed templates are in `templates/`. The app accepts codes and does not consume auth deep links. Recovery uses an isolated, nonpersistent client and closes its SDK resources on exit.
+5. Configure an SMTP provider within its free allowance for test addresses you own. Supabase's default provider is restricted; this project's hosted setup refused custom code templates until custom SMTP was configured. The owner's Brevo configuration is external to this repo. Never commit SMTP credentials or disable email confirmation to bypass delivery setup.
+6. For a fresh clone, copy `mobile/.env.example` to `mobile/.env`, enter the HTTPS project URL and public **`sb_publishable_…`** key, and leave `EXPO_PUBLIC_USE_LOCAL_BACKEND=false`. Hosted legacy anon JWTs and secret/service-role keys are rejected by client configuration. Restart Metro after changes. No privileged key belongs in `EXPO_PUBLIC_*`.
+7. Run app checks and the device checklist. Test with accounts/content you control. Per-account quotas do not replace aggregate signup/request/egress controls before public release.
 
-Local mode accepts a CLI legacy anon JWT or a publishable key. Decoding the JWT's role only rejects accidental admin-key configuration; the backend must still verify its signature. Hosted builds require HTTPS and a publishable key. Never send a real account's credentials over a local-development connection. Physical-device LAN connections are intentionally outside this setup.
+## Optional local backend
 
-Use `npm run backend:stop` to stop services while preserving local data. Apply pending migrations to an existing local stack with the pinned CLI's `migration up --local` command. Do not reset the database or delete Docker volumes unless you intend to discard the local data. The test script never resets the database.
+Docker is required only for this path. When intentionally ready, from `mobile` run:
 
-## Tests and boundaries
+```bash
+npm ci
+npm run backend:start
+npm run backend:env -- android  # Android emulator
+# Or: npm run backend:env       # iOS Simulator
+npm run test:integration
+npm run backend:stop
+```
 
-`cd mobile; npm test` executes the actual migration in embedded PostgreSQL (PGlite), with synthetic `auth.uid()` and Storage tables and low-privilege roles. It tests anonymous/outsider denial, invitation consent, immutable identities, duplicate send idempotency, storage ownership, cross-user photo theft, block enforcement, and message/invite limits. This executes Postgres grants, RLS, and functions; it does **not** test GoTrue, PostgREST, Storage HTTP MIME/size enforcement, JWT validation, Realtime delivery, or production configuration. Full Supabase integration tests remain a release gate.
+The CLI starts local Auth, PostgREST, Storage, Realtime, Mailpit and Edge Runtime. `backend:env` writes an ignored `.env` with public local configuration and refuses to overwrite an existing one. Mailpit receives code emails at `http://127.0.0.1:54324`.
 
-`npm run test:integration` is a separate, fail-on-missing-backend suite using the same API module as the mobile app. It exercises real local email verification, Auth sessions/refresh, PostgREST, private Storage MIME/byte limits and authenticated downloads, idempotent sends, account switching, participant-only Realtime, resubscription catch-up, and bilateral blocking. It obtains ephemeral credentials from CLI status, refuses hosted URLs, never prints keys/tokens, and cleans up its synthetic users and physical photos. It does not reset your database or delete other users. Local inbox messages from synthetic accounts are retained in Mailpit; stop/delete the isolated test environment according to your retention needs.
+Debug local mode permits only `10.0.2.2:54321` for Android or loopback on port 54321; it requires both `EXPO_PUBLIC_USE_LOCAL_BACKEND=true` and a development runtime. Release bundles reject it. Local legacy anon JWT acceptance checks the role to catch accidental admin configuration; backend signature verification is still required. Arbitrary LAN backend hosts are deliberately excluded, so physical phones should use the hosted HTTPS test project. Expo's LAN JavaScript URL is separate from the backend URL.
 
-GitHub CI runs the real suite against an isolated Linux Docker stack, without repository secrets or a hosted backend. Native OS behavior (picker, Keychain/Keystore, ATS, Android network policy, screenshots and caching) still needs device testing.
+Stopping the local stack preserves data. CI uses an isolated Linux stack and does not contact the hosted project. Keep the owner's local Docker engine stopped unless explicitly restarting local backend work.
 
-Limits are enforced by RPCs, not just UI: 20 invitations/day with one-minute spacing; 30 messages/minute and 500/day; 20 photo reservations/day and 100 per account total; JPEG-only uploads no larger than 1 MiB. Invites and messages serialize against the sender's profile to reduce concurrent limit bypass. Authenticated clients cannot INSERT directly into messages, conversations, or photo reservations. No UPDATE grant exists for membership or messages, and Storage has no UPDATE policy. No public bucket or signed download links are created. Photo downloads use authenticated requests with caching disabled in the app.
+## Security and operations
 
-Unattached photo reservations expire for upload after one hour. Failed/abandoned uploads can leave reserved rows or storage objects. The operator command in `docs/PHOTO_MAINTENANCE.md` safely removes unattached media older than 48 hours; it defaults to a dry run and is not scheduled automatically. Account erasure is documented in `docs/ACCOUNT_ERASURE.md`, and report review in `docs/MODERATION.md`. Monitored scheduling, operator procedures and broader retention remain public-release requirements. Database backups, emails and copies made by recipients need separate retention handling. Do not delete Storage rows directly with SQL: delete physical objects through the Storage API.
+Both `chat-photos` and `profile-photos` are private. Clients cannot upload unvalidated bytes directly. One-time photos have no ordinary Storage download path; the authenticated recipient claim returns non-cacheable bytes once. Profile images are limited to current validated media visible to the owner and accepted, unblocked contacts. Account/shared clearing removes physical files before final metadata deletion.
+
+Review [security model](../docs/SECURITY_MODEL.md), [manual content maintenance](../docs/PHOTO_MAINTENANCE.md), [ephemeral privacy](../docs/EPHEMERAL_PRIVACY.md), [account erasure](../docs/ACCOUNT_ERASURE.md) and [moderation](../docs/MODERATION.md). A monitored scheduler, global abuse controls, support/appeal processes and backup/recovery policy remain release gates. Do not deploy to another person's backend without authorization.

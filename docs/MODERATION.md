@@ -1,6 +1,6 @@
 # Reporting and moderation
 
-Participants can report another participant's message in an accepted conversation, including after blocking. Reports are limited to ten new reports per account per day; duplicate submissions return the existing report. The confirmation explains that the selected message and attached photo are shared with authorized moderators. No full conversation history or reporter identity is returned by the review queue.
+Participants can report another participant's eligible, unexpired message in an accepted conversation, including after blocking. Reports are limited to ten new reports per account per day; duplicate submissions return the existing report. The confirmation explains that the selected text and any ordinary attached photo are shared with authorized moderators. One-time photo bytes are never shared through this review path. Expired content is excluded from review; shared clearing/account erasure deletes related reports. No full conversation history or reporter identity is returned by the review queue.
 
 Moderator privileges live in a private server table. The mobile app cannot assign roles or bypass the server checks. A trusted operator can grant or revoke a role using `public.set_moderator(target, enabled)` through a privileged server connection or the project SQL editor. Never put privileged credentials in the app, repository, or chat. Assign only a verified operator account and revoke access when no longer needed.
 

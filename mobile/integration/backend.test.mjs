@@ -10,6 +10,8 @@ import { createModerationApi } from '../src/lib/moderation-api.ts';
 import { messageChannel } from '../src/lib/message-channel.ts';
 import { localStatus } from '../scripts/backend.mjs';
 import { cleanAbandonedPhotos } from '../scripts/photo-cleanup.mjs';
+import { cleanExpiredText } from '../scripts/text-cleanup.mjs';
+import { createSessionStorage } from '../src/domain/secure-storage.ts';
 import { createFriendsApi } from '../src/lib/friends-api.ts';
 import { createAccountApi } from '../src/lib/account-api.ts';
 import { userErrorMessage } from '../src/domain/user-errors.ts';
@@ -405,11 +407,14 @@ test(
               (await actor.client.storage.from('chat-photos').download(timed.path)).error,
               'expired bytes denied',
             );
-          ok((await admin.rpc('purge_expired_messages')).error, 'purge expired text');
+          const textPreview = await cleanExpiredText(admin);
+          assert.ok(textPreview.eligible > 0, 'expired text preview reports pending rows');
+          assert.ok((await cleanExpiredText(admin, { apply: true })).removed > 0);
           await assert.rejects(
             alice.api.send(cid, expiredId, 'temporary synthetic text', alice.id),
           );
           assert.ok((await bob.client.rpc('purge_expired_messages')).error);
+          assert.ok((await bob.client.rpc('expired_text_cleanup_count')).error);
           const once = await validatedAsset(alice, true);
           await alice.api.send(cid, randomUUID(), '', alice.id, once.id);
           for (const actor of [alice, bob, eve]) {
@@ -739,6 +744,113 @@ test(
           await bob.api.send(freshCid, randomUUID(), 'new beginning', bob.id);
           await bob.api.clearChat(freshCid, bob.id, requestId);
           assert.equal((await eve.api.messages(freshCid))[0].body, 'new beginning');
+        },
+      );
+      await t.test(
+        'chat clearing preserves daily reservation limits and lockless refresh cannot restore a signed-out session',
+        async () => {
+          const email = `quota-${runId}@example.test`;
+          const created = await admin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+          });
+          ok(created.error, 'quota fixture account');
+          const owner = created.data.user.id;
+          users.push(owner);
+          const quotaClient = make();
+          ok(
+            (await quotaClient.auth.signInWithPassword({ email, password })).error,
+            'quota fixture sign-in',
+          );
+          const quotaApi = createChatApi(() => quotaClient);
+          await quotaApi.saveProfile(owner, `quota_${runId}`, 'Quota fixture');
+          const quotaCid = await quotaApi.invite(bob.handle);
+          await bob.api.respond(quotaCid, true);
+          for (let i = 0; i < 20; i++)
+            ok(
+              (await quotaClient.rpc('reserve_photo', { cid: quotaCid }).single()).error,
+              'quota reservation',
+            );
+          assert.ok((await quotaClient.rpc('reserve_photo', { cid: quotaCid }).single()).error);
+          await quotaApi.clearChat(quotaCid, owner, randomUUID());
+          assert.ok(
+            (await quotaClient.rpc('reserve_photo', { cid: quotaCid }).single()).error,
+            'clearing cannot reset the daily allowance',
+          );
+
+          const vault = new Map();
+          const storage = createSessionStorage(
+            {
+              getItem: async (key) => vault.get(key) ?? null,
+              setItem: async (key, value) => {
+                vault.set(key, value);
+              },
+              removeItem: async (key) => {
+                vault.delete(key);
+              },
+            },
+            randomUUID,
+          );
+          let release,
+            started,
+            refreshes = 0;
+          const gate = new Promise((resolve) => {
+            release = resolve;
+          });
+          const requestStarted = new Promise((resolve) => {
+            started = resolve;
+          });
+          const guarded = createClient(local.url, local.key, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: false,
+              detectSessionInUrl: false,
+              storage,
+            },
+            global: {
+              fetch: async (input, init) => {
+                const response = await fetch(input, init);
+                if (String(input).includes('grant_type=refresh_token')) {
+                  refreshes++;
+                  started();
+                  await gate;
+                }
+                return response;
+              },
+            },
+          });
+          clients.push(guarded);
+          try {
+            ok(
+              (await guarded.auth.signInWithPassword({ email, password })).error,
+              'guard fixture sign-in',
+            );
+            const first = guarded.auth.refreshSession(),
+              second = guarded.auth.refreshSession();
+            await Promise.race([
+              requestStarted,
+              delay(10000).then(() => {
+                throw new Error('Refresh request did not start');
+              }),
+            ]);
+            ok(
+              (await guarded.auth.signOut({ scope: 'local' })).error,
+              'sign-out while refresh response is pending',
+            );
+            release();
+            const results = await Promise.all([first, second]);
+            assert.equal(refreshes, 1, 'refresh requests use the SDK single flight');
+            assert.ok(
+              results.every((result) => !result.data.session),
+              'late rotated sessions are discarded',
+            );
+            assert.ok(!(await guarded.auth.getSession()).data.session, 'sign-out persists');
+            assert.equal(vault.size, 0, 'encrypted-vault adapter retains no session chunks');
+          } finally {
+            release();
+            guarded.auth.dispose();
+          }
         },
       );
       await t.test('sign-out and a fresh sign-in do not carry over another account', async () => {

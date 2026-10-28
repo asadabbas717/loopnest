@@ -2,6 +2,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRecoveryApi } from '../src/lib/recovery-api.ts';
 
+test('recovery cleanup disposes SDK background resources even when sign-out fails', async () => {
+  let disposed = 0;
+  const api = createRecoveryApi({
+    auth: {
+      signOut: async () => {
+        throw new Error('offline');
+      },
+      dispose: () => disposed++,
+    },
+  });
+  await assert.rejects(api.dispose(), /offline/);
+  assert.equal(disposed, 1);
+});
+
 test('recovery cannot change a password before verification and validates the code', async () => {
   const api = createRecoveryApi({ auth: {} });
   await assert.rejects(api.complete('long-enough-password'));

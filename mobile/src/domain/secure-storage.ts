@@ -3,6 +3,11 @@ export type Vault = {
   setItem: (key: string, value: string) => Promise<void>;
   removeItem: (key: string) => Promise<void>;
 };
+class InvalidSessionManifest extends Error {
+  constructor() {
+    super('Invalid stored session.');
+  }
+}
 
 // All pieces remain in the native encrypted vault. No plaintext fallback.
 // Versioned manifests commit last, so an interrupted write cannot mix sessions.
@@ -16,7 +21,12 @@ export function createSessionStorage(vault: Vault, randomId: () => string) {
   const manifest = async (key: string) => {
     const value = await vault.getItem(key);
     if (!value) return null;
-    const result: unknown = JSON.parse(value);
+    let result: unknown;
+    try {
+      result = JSON.parse(value);
+    } catch {
+      throw new InvalidSessionManifest();
+    }
     if (
       !result ||
       typeof result !== 'object' ||
@@ -29,7 +39,7 @@ export function createSessionStorage(vault: Vault, randomId: () => string) {
       result.count < 1 ||
       result.count > 256
     )
-      throw new Error('Invalid stored session.');
+      throw new InvalidSessionManifest();
     return { version: result.version, count: result.count };
   };
   const clean = async (key: string, previous: { version: string; count: number } | null) => {
@@ -40,12 +50,24 @@ export function createSessionStorage(vault: Vault, randomId: () => string) {
   return {
     getItem: (key: string) =>
       serialize(async () => {
-        const current = await manifest(key);
+        let current;
+        try {
+          current = await manifest(key);
+        } catch (error) {
+          // Invalidate an unusable marker so later sign-in/clear can recover.
+          // A transient vault read failure must not discard a valid session.
+          if (error instanceof InvalidSessionManifest) await vault.removeItem(key);
+          throw error;
+        }
         if (!current) return null;
         let result = '';
         for (let i = 0; i < current.count; i++) {
           const part = await vault.getItem(`${key}.${current.version}.${i}`);
-          if (part === null) throw new Error('Incomplete stored session.');
+          if (part === null) {
+            await vault.removeItem(key);
+            await clean(key, current).catch(() => undefined);
+            throw new Error('Incomplete stored session.');
+          }
           result += part;
         }
         return result;
@@ -73,7 +95,12 @@ export function createSessionStorage(vault: Vault, randomId: () => string) {
       }),
     removeItem: (key: string) =>
       serialize(async () => {
-        const previous = await manifest(key);
+        let previous = null;
+        try {
+          previous = await manifest(key);
+        } catch (error) {
+          if (!(error instanceof InvalidSessionManifest)) throw error;
+        }
         await vault.removeItem(key);
         await clean(key, previous);
       }),

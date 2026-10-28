@@ -1,33 +1,45 @@
-# Abandoned-photo maintenance
+# Content maintenance and retention
 
-Only photo reservations older than 48 hours that are not referenced by any message are eligible. This includes failed/cancelled uploads and empty reservations. Sent photos, reported photos attached to messages and recent reservations are preserved. The delay also preserves the rolling one-day reservation quota. Successful cleanup releases the account's total reservation capacity.
+Physical cleanup is an explicit operator workflow. No timer or paid worker is installed. Database rules deny expired/consumed media immediately according to their access policy; physical objects and metadata require successful cleanup. Do not promise exact physical deletion times.
 
-The database marks a bounded batch before deleting bytes. Attachment and upload triggers lock the same asset and reject use after marking. A separate check after the claim lock protects a message that committed before cleanup acquired the lock. Physical files are removed with the Storage API; only then can the privileged finalization RPC delete application metadata. Storage metadata is never deleted directly by production code. Interrupted removal/finalization is retryable, including already-missing files. Retrying account erasure and cleanup concurrently is safe because finalization tolerates already-deleted application rows.
+## Commands
 
-## Operator commands
-
-From `mobile`, use the pinned Supabase CLI login belonging to an authorized project operator. Do not paste privileged credentials into chat, app configuration or the repository. The runner obtains the legacy service-role API key from that authorized CLI session into memory; it never stores or prints it. It does not use the mobile `.env` to select a target.
+From `mobile`, using the pinned CLI and an authorized operator login:
 
 ```bash
-# Read-only preview: counts only; no file paths or user identities are printed.
-npm run maintenance:photos -- --project-ref YOUR_20_LETTER_PROJECT_REF
+# Default: counts only. No messages, paths or credentials are printed.
+npm run maintenance:content -- --project-ref YOUR_20_LETTER_PROJECT_REF
 
-# Physically remove eligible abandoned media in that explicit project.
-npm run maintenance:photos -- --project-ref YOUR_20_LETTER_PROJECT_REF --apply
+# Explicit mutation: remove eligible media, then purge expired text.
+npm run maintenance:content -- --project-ref YOUR_20_LETTER_PROJECT_REF --apply
 
-# Isolated local testing; requires Docker/local Supabase running.
-npm run maintenance:photos -- --local
-npm run maintenance:photos -- --local --apply
+# Optional isolated local backend, only when Docker is intentionally running.
+npm run maintenance:content -- --local
 ```
 
-Dry run is the default. An apply run processes at most ten batches of 100 assets. Its summary includes the remaining eligible count; rerun if nonzero. Another worker can hold locks, so a temporarily empty batch does not prove that the entire backlog is gone. On errors, the runner exits unsuccessfully without forwarding credential-bearing backend diagnostics. Marked photos cannot be attached later; create a fresh reservation to resend an abandoned draft.
+The earlier `maintenance:photos` command is a compatibility alias for the same content workflow. Its summary now has `photos` and `messages` sections. Hosted credentials come from the authorized CLI session into memory, not the mobile `.env`; no privileged key is written or logged. A dry run changes no rows. An apply run processes at most ten batches of 100 photo assets and ten batches of 500 expired text messages; inspect remaining counts and rerun as needed. Bounded work or a temporarily locked batch is not proof that every eligible object has been removed.
 
-No hosted timer, billing change or paid worker is installed. During private development, the maintainer must preview and run this command regularly (for example daily while testing) and check the remaining count. A monitored scheduler and quota alerts remain requirements before public launch. CLI login is a privileged operator capability; restrict access to the development machine.
+## Eligibility and ordering
 
-## Retention boundaries
+| Content | Eligible physical cleanup |
+| --- | --- |
+| Unattached photo reservation/object | Older than 48 hours |
+| Photo attached to an expired message | At the message deadline |
+| Consumed one-time photo | After a five-minute delivery grace |
+| Expired text/placeholder without a photo | At its server deadline |
+| Active shared-clear conversation | Owned by Clear Chat's retryable worker; excluded from general photo batches |
+| Current unexpired regular photo | Preserved until shared clearing/account erasure or later expiry |
 
-Sent conversations/photos are retained until account erasure; blocking restricts access and does not delete content. Abandoned photos are eligible after 48 hours but are not guaranteed to disappear at precisely that age: maintenance must run successfully. Account erasure removes affected conversations/media for both participants. It cannot revoke recipients' copies, screenshots, already delivered email or provider backups. Provider retention and a support/appeal route must be published before public use. This maintenance phase does not add automatic expiry for messages, reports, audit records, Auth logs or backups.
+Photo cleanup marks a batch, removes physical objects through Storage and only then finalizes metadata/messages. Upload/attachment guards reject marked assets. Failures keep retryable metadata; do not delete Storage metadata directly with SQL. Expired text deletion leaves private delivery tombstones so an old send cannot resurrect it and rolling message quotas remain enforced.
 
-The SQL authorization/trigger checks and injected Storage failure tests run in `npm test`. The real local integration suite also tests physical deletion, retrying marked assets, exclusion of shared/recent assets and client privilege denial. See `STATUS.md` for verified execution evidence.
+Deleting recent photo assets through clear/expiry/cleanup now retains a private quota receipt containing only reservation ID, owner ID and time. It preserves the 20-per-day allowance after deletion, contains no path/bytes/conversation ID, cascades on owner erasure and is eligible for pruning after 24 hours on the owner's next reservation. This does not reconstruct previously deleted reservations from before the hardening migration.
 
-All 26 unit/Postgres tests and 13 real backend tests passed in [CI run 39668907564](https://github.com/asadabbas717/loopnest/actions/runs/39668907564), source commit `c97984b`. The hosted migration is applied. Its first count-only preview found zero eligible assets; no hosted files were removed. Anonymous hosted access to the maintenance RPCs was independently denied.
+Private delivery tombstones become eligible for removal after thirty days and are pruned by `purge_expired_messages`; clear-request metadata is pruned by later clear finalization. These are operator/activity-dependent cleanup passes, not exact deletion deadlines.
+
+Profile-photo cleanup is separate: replacement/removal revokes reads first, then its Edge Function removes retired bytes. Remove/reset or a later upload can retry failure; stale unattached profile reservations become eligible after an hour. Already-purged avatar metadata becomes eligible after thirty days and is pruned on a later reservation. Account erasure removes all the account's profile-photo bytes before Auth deletion. See [private avatars](PRIVATE_AVATARS_AND_CLEAR_CHAT.md).
+
+## Operating limits
+
+Preview and run maintenance regularly during private testing; inspect failures and remaining counts. Monitored scheduling, global quota/abuse alerts, retention/support procedures and backup policy remain public-release work. Blocking revokes access but does not erase unexpired history. Clear Chat removes one shared history for both participants; account erasure removes affected conversations/media from both participants. Neither can revoke downloaded copies or provider backups.
+
+Injected failure tests verify physical-delete ordering and bounded work. Embedded PostgreSQL and real-service CI verify privileges, expiry, Storage deletion and quotas. Refer to [STATUS.md](STATUS.md) for the exact tested/deployed revision.

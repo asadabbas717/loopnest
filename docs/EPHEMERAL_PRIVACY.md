@@ -1,5 +1,7 @@
 # Disappearing messages and one-time photos
 
+Retention controls, the one-time viewer and the backend are implemented/deployed; current acceptance is in [STATUS.md](STATUS.md). Use [content maintenance](PHOTO_MAINTENANCE.md) for the bounded operator workflow: it now covers eligible photo objects and expired text. Recent-photo quota receipts preserve the daily reservation limit after content cleanup without keeping image paths or content.
+
 Conversation disappearance settings are visible to both accepted participants. Either may set an hourly duration between one hour and thirty days or turn it off; changes apply only to new messages. A ten-second cooldown prevents setting spam. The backend stamps deadlines when a message is sent; clients cannot choose timestamps, extend an existing message's life, or update its privacy mode.
 
 At the deadline, RLS denies message text, photo metadata and regular photo downloads to both participants. Moderator queues and photo review do not bypass expiration. Reporting cannot newly share expired content. The app receives server time with each bounded history page and computes a conservative monotonic deadline, subtracting request latency, rather than trusting the phone's wall clock. Cached content and copies already delivered cannot be recalled from a modified client or another camera.

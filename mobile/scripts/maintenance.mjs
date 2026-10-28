@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { localCli, localStatus } from './backend.mjs';
 import { cleanAbandonedPhotos } from './photo-cleanup.mjs';
+import { cleanExpiredText } from './text-cleanup.mjs';
 
 // Requires an explicit target. Hosted credentials come from the operator's
 // authorized CLI session, remain in memory, and are never written or logged.
@@ -32,12 +33,13 @@ try {
   const client = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
-  const result = await cleanAbandonedPhotos(client, { apply: args.includes('--apply') });
-  console.log(JSON.stringify({ target: ref ?? 'local', ...result }));
+  const photos = await cleanAbandonedPhotos(client, { apply: args.includes('--apply') });
+  const messages = await cleanExpiredText(client, { apply: args.includes('--apply') });
+  console.log(JSON.stringify({ target: ref ?? 'local', photos, messages }));
 } catch {
   // CLI or HTTP errors can include credentials. Do not forward their contents.
   console.error(
-    'Photo maintenance failed. Check target/options, CLI access, migrations and connectivity. No credentials are logged.',
+    'Content maintenance failed. Check target/options, CLI access, migrations and connectivity. No credentials are logged.',
   );
   process.exitCode = 1;
 }

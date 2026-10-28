@@ -1,5 +1,11 @@
 # Development status
 
+## Phase 22 — repository review and documentation refresh (verification in progress)
+
+Reviewed auth, authorization/media lifecycle, cleanup/quotas, dependency alignment and docs. Fixed late auth-read overwrites and corrupt/incomplete vault-marker recovery, removed the deprecated SDK process lock, closed recovery SDK resources, preserved daily photo quotas after content deletion, excluded active clears from general photo batches and added expired-text operator maintenance. Reproduced the quota reset before the fix; regression now passes. SDK 58 packages are aligned to Expo Go's recommended patches, including Expo 58.0.21 / Router 58.0.28. React Native stays at 0.88.0 because the live Expo Go validator requires it; the native template's newer patch recommendation is documented rather than suppressed. No new paid service or application dependency was introduced.
+
+Rewrote README, backend setup, verification/device, security-model and maintenance docs; corrected current avatar/reporting/retention descriptions and labeled historical snapshots. Added a local Markdown link CI check. See `REPOSITORY_REVIEW.md` for findings, scope and rollout. All 75 local tests, strict typing/lint/formatting and all 25 tracked Markdown-file link checks pass. Dependency compatibility and all 20 Expo Doctor checks pass; npm audit reports zero known vulnerabilities with the documented local-fork caveat. Android native generation preserves all six permission-removal directives. Full-service CI and deployment of the new hardening migration are pending. Expo and local Docker remain stopped; current two-phone acceptance is deferred at the owner's request.
+
 ## Phase 21 — private profile pictures
 
 Final feedback source `94c8c57` also passes clean-install quality/audit checks, all 66 local tests, Android/iOS Hermes exports and all 18 real backend tests in [CI run 40725727568](https://github.com/asadabbas717/loopnest/actions/runs/40725727568). This includes the clean unit round-trip display and explicit media retry refinements. Hosted deployment and private-bucket/anonymous-denial verification are complete. Screenshots remain explicitly enabled only in the owner's local development configuration for continued UI feedback. Native acceptance is pending; no result is inferred from bundling.

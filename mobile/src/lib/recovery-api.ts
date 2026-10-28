@@ -39,7 +39,11 @@ export function createRecoveryApi(client: SupabaseClient) {
       verifiedEmail = null;
     },
     async dispose() {
-      await client.auth.signOut({ scope: 'local' });
+      try {
+        await client.auth.signOut({ scope: 'local' });
+      } finally {
+        client.auth.dispose?.();
+      }
     },
   };
 }

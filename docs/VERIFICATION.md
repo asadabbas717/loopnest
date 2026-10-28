@@ -1,32 +1,41 @@
 # Verification and release gates
 
-For current phase/device evidence, read `STATUS.md`. The phase-4 snapshot below is historical: Docker was subsequently repaired and then stopped at the owner's request, hosted test configuration and Android acceptance have progressed, and the current audit count is 21 affected packages (18 high, 3 moderate). Native preview protection introduced after an observed recent-apps leak still needs device acceptance. Passing CI does not establish OS screenshot, autofill or IME behavior.
+Use [STATUS.md](STATUS.md) for exact source commits, CI links and user-reported device evidence. Older phase documents describe historical checks; they do not override the current implementation or acceptance status.
 
-## Phase-4 update
+## Automated checks
 
-The real-service boundary is now tested in isolated Linux Docker CI: [run 39642114879](https://github.com/asadabbas717/loopnest/actions/runs/39642114879), source commit `401d830`. All 15 local unit/Postgres/configuration checks and all 8 reported integration tests pass, together with typing, lint, formatting and platform exports. The integration suite uses the same API/channel modules as the app and covers real email verification, signed JWT sessions/refresh, private storage size/MIME/authenticated download rules, outsider/block denial, duplicate retries, account changes, live recipient-only delivery and resubscription catch-up. A detected replication-readiness race was fixed and verified by that rerun.
+From `mobile`:
 
-Local Windows Docker startup is still blocked on a locked Docker socket; this host has not run the full stack. Native Keychain/Keystore, picker, TLS/ATS/device behavior, screenshot/caching and hosted-provider configuration remain unverified. The current lockfile reports 24 advisories (18 high, 6 moderate); see `DEPENDENCIES.md`. The older phase snapshots below are historical, not the current integration result.
+```bash
+npm ci
+npm run check
+npm run format:check
+npm run audit:dependencies
+npx expo install --check
+npx expo-doctor
+```
 
-## Performed locally
+`check` includes strict TypeScript, Expo lint, domain/handler regressions and real SQL migrations executed in embedded PostgreSQL. Fixtures simulate Auth and Storage service tables; embedded tests cannot establish signed JWT, actual object deletion, SMTP or Realtime behavior.
 
-- TypeScript strict mode and Expo lint.
-- Domain regressions: Unicode boundaries, handle/UUID validation and password preservation.
-- Native-session adapter regressions using an injected vault: bounded Unicode chunking, failed chunk/manifest writes, refresh/read/logout serialization, cleanup, and corrupt-data denial. These tests do not establish device Keychain/Keystore behavior or power-loss guarantees.
-- The actual SQL migration executed in embedded PostgreSQL with RLS and low-privilege roles. Tested outsider/anonymous denial, consent, immutable identity, wrong-owner photo reuse, private Storage access, blocking, duplicate sends, and server rate limits. Auth and Storage service tables are simulated; see the backend README for the untested service boundaries.
-- Android and iOS Hermes JavaScript exports succeeded.
-- Android native project generation succeeded. No APK/IPA has been compiled or installed.
+The **Quality and authorization** GitHub workflow uses clean Node 24 installs. Its quality job runs audit, checks, formatting, a temporary localhost Expo startup/status/stop smoke and Android/iOS Hermes exports. The local project server does not need to run. The backend job starts an isolated Linux Supabase stack, exercises real Auth/PostgREST/Storage/Edge Functions/Realtime, and stops its stack afterward. Do not start the owner's stopped local Docker engine just to repeat CI.
 
-## Dependency review
+Security regressions cover outsider/anonymous denial, account binding, accepted/nonblocked membership, immutable delivery IDs, physical-delete ordering, metadata-free JPEG re-encoding, one-time concurrent opening, server expiry, Clear Chat retries, profile-photo permissions, upload quotas and auth/session races. Tests must use synthetic content and avoid logging credentials or backend responses containing tokens.
 
-The initial fresh install reported 29 advisories (19 high, 10 moderate); compatible Expo SDK 57 patch updates reduced this to 28 (18 high, 10 moderate). Findings include transitive Expo/Metro tooling and URL handling dependencies. npm suggested breaking downgrades to obsolete Expo/React Native versions; these were not applied. Compatible patches were installed with Expo's dependency resolver. A successful framework compatibility check is not a clean vulnerability audit. Review the current lockfile advisories and their runtime reachability before release; known unpatched upstream findings remain a release blocker. Dependabot is configured to propose updates, not merge them automatically.
+## Current evidence and limits
 
-## Required before public deployment
+- Earlier SDK 58 Expo Go acceptance passed on both owner phones for core sign-in, messaging, network recovery, photos, keyboard/autofill, account switching and native capture protection.
+- The latest app launch was confirmed after starting the LAN Expo server. That connection incident did not establish an application-code crash.
+- The redesigned layout, retention drafts, scroll restoration, shared clearing and private profile photos still need the updated two-phone checklist. The second phone is currently unavailable.
+- The owner explicitly enabled screenshot testing in local development. Capture-protection acceptance requires disabling that flag, restarting Metro and fully reopening Expo Go.
+- No APK/IPA was built by the recorded source/export checks. iOS, signed-build lifecycle, accessibility and broader device-format/performance acceptance remain separate.
 
-1. The isolated local-service CI tests now cover JWT sessions, RPC response shapes, Storage limits, and Realtime access/rejoin. Repeat these checks against the intended hosted test project before deployment, and verify actual network disruption and device background behavior.
-2. Test iOS and Android Keychain/Keystore, token rotation, session corruption, backgrounding, sign-out/account switch, and native picker lifecycles. Verify EXIF/GPS stripping on multiple image formats and OS versions. Neither MIME labels nor client re-encoding are server-side file-content validation.
-3. Add a trusted content validation/moderation path, abuse reporting, account recovery/erasure, media cleanup, and a documented retention policy. Orphan reservations/objects count toward small development quotas and are not automatically removed yet.
-4. Verify email confirmation delivery, CAPTCHA/signup controls, backend aggregate rate limits, free-tier quota behavior, and privacy/terms appropriate to the deployment. No public launch is authorized by this source rebuild.
-5. Device accessibility and performance, signing and rollback, backup/recovery, dependency advisory assessment, and independent security review.
+The dependency audit is a current registry check, not proof of vulnerability absence. The documented local `deepmerge` fork is not independently audited by npm. Preserve its provenance and focused tests; review its maintenance and the scoped CLI Zod override when upgrading tooling.
 
-No production credentials, live backend writes, billing changes, app-store publishing, or user-data migration were performed. Chat is not end-to-end encrypted. This repository is a reviewed development starting point, not a completed secure-messenger assurance process.
+## Before public release
+
+1. Finish device acceptance for the latest source, including capture/recording, recent apps, session/account transitions, keyboard/scrolling, photo picker and one-time closing behavior. Test actual signed builds and iOS.
+2. Add monitored automatic physical cleanup and aggregate signup/request/egress protections; verify project-wide Free quotas and abuse response. Per-account limits alone are insufficient for public anonymous signup abuse.
+3. Establish moderator/appeal/support procedures, retention and backup/recovery policies, failure monitoring, rollback and distribution/signing ownership.
+4. Recheck dependencies and run an independent security review. Keep email confirmation enabled and test SMTP within the chosen provider's allowance.
+
+The app is in development and is not end-to-end encrypted. Backend access denial at expiry is independent of physical cleanup; provider backups and recipients' copies remain outside live erasure. See [security model](SECURITY_MODEL.md) and [device checklist](PRIVATE_AVATARS_AND_CLEAR_CHAT.md).

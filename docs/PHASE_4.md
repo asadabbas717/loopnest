@@ -1,5 +1,7 @@
 # Phase 4 — backend integration and security verification
 
+Historical phase snapshot. Use [current status](STATUS.md), [verification](VERIFICATION.md) and [backend setup](../supabase/README.md) for today's implementation, deployment, dependency counts and device acceptance.
+
 Scope: real local Supabase API tests, debug-only local connectivity, email-code configuration, retries/account changes and dependency review. No hosted deployment, billing change or production data migration.
 
 Implemented a pinned Supabase CLI and local start/stop/public-env commands. The local email template retains verification and delivers a code via Mailpit without a third-party provider. The native connection policy permits explicit loopback/emulator endpoints only in a debug runtime. Release bundles continue to reject local mode and legacy JWT keys. Tests run the exact mobile chat API through the real Supabase SDK rather than duplicating its request-building code.

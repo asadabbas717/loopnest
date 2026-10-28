@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Text } from 'react-native';
 import { backendUrl, publicKey } from '../lib/client';
@@ -20,12 +20,19 @@ export function Recovery({ onClose }: { onClose: () => void }) {
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const { busy, error, run } = useAction();
-  useEffect(
-    () => () => {
-      void recovery.dispose();
-    },
-    [recovery],
-  );
+  const pendingCleanup = useRef<{
+    api: typeof recovery;
+    timer: ReturnType<typeof setTimeout>;
+  } | null>(null);
+  useEffect(() => {
+    // Strict Mode's immediate setup/cleanup/setup must not dispose the same
+    // client while it is still in use. A different API instance still closes.
+    if (pendingCleanup.current?.api === recovery) clearTimeout(pendingCleanup.current.timer);
+    return () => {
+      const timer = setTimeout(() => void recovery.dispose().catch(() => undefined), 0);
+      pendingCleanup.current = { api: recovery, timer };
+    };
+  }, [recovery]);
   return (
     <Page>
       <Heading

@@ -73,3 +73,37 @@ test('corrupt or incomplete vault contents fail closed without plaintext fallbac
   values.set('session', '{"version":"v1","count":1}');
   await assert.rejects(storage.getItem('session'), /Incomplete/);
 });
+
+test('corrupt session markers can be cleared and incomplete chunks cannot trap later sign-in', async () => {
+  const { storage, values } = fixture();
+  values.set('session', 'not JSON');
+  await storage.removeItem('session');
+  assert.equal(await storage.getItem('session'), null);
+  values.set('session', '{"version":"bad","count":999999}');
+  await assert.rejects(storage.getItem('session'), /Invalid stored/);
+  assert.equal(await storage.getItem('session'), null);
+  await storage.setItem('session', 'x'.repeat(1000));
+  const marker = JSON.parse(values.get('session'));
+  values.delete(`session.${marker.version}.1`);
+  await assert.rejects(storage.getItem('session'), /Incomplete/);
+  assert.equal(values.size, 0);
+  await storage.setItem('session', 'fresh valid session');
+  assert.equal(await storage.getItem('session'), 'fresh valid session');
+});
+test('temporary vault read failure does not erase a potentially valid session', async () => {
+  let removals = 0;
+  const storage = createSessionStorage(
+    {
+      getItem: async () => {
+        throw new Error('Vault locked');
+      },
+      setItem: async () => {},
+      removeItem: async () => {
+        removals++;
+      },
+    },
+    () => 'version',
+  );
+  await assert.rejects(storage.getItem('session'), /Vault locked/);
+  assert.equal(removals, 0);
+});

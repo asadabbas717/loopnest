@@ -1,8 +1,8 @@
 # Free-tier policy
 
-Use a **Supabase Free organization**, without paid add-ons or an upgrade. As verified October 21, 2026, the Free plan lists 500 MB database, 1 GB file storage, 5 GB egress plus 5 GB cached egress, 50,000 monthly active users, and two active projects. Free projects may pause after a week of inactivity. Quotas and provider terms can change; free is not unlimited or an availability guarantee.
+Use a **Supabase Free organization**, without paid add-ons or an upgrade. As verified October 28, 2026, the Free plan lists 500 MB database, 1 GB file storage, 5 GB egress plus 5 GB cached egress, 50,000 monthly active users, two active projects and 500,000 Edge Function invocations. Free projects may pause after a week of inactivity. Quotas and provider terms can change; free is not unlimited or an availability guarantee.
 
-Source: https://supabase.com/pricing. Storage access: https://supabase.com/docs/guides/storage/security/access-control.
+Sources: [plan limits](https://supabase.com/pricing), [Edge Function quota](https://supabase.com/docs/guides/functions/pricing), [Storage access](https://supabase.com/docs/guides/storage/security/access-control).
 
 Keep images small, load bounded pages, subscribe only to the current conversation, and release subscriptions when leaving. No SMS, paid image transformation, AI, Firebase Storage, required paid SMTP, cloud builds, or keep-alive automation. Development email delivery has strict provider restrictions: use local Supabase emails or authorized test addresses; do not disable email verification for a public deployment. Check the live dashboard before enabling a public signup flow.
 
