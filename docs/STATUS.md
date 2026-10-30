@@ -1,8 +1,14 @@
 # Development status
 
+## Phase 27 — delivery acknowledgements and optional read sharing
+
+Added Sent/Delivered/Seen indicators with private recipient-bound acknowledgements, bounded foreground catch-up and Realtime status refresh. Read sharing starts off; Seen requires mutual opt-in and a visible message footer in the focused, settled chat. Loading, restoration, dragging, keyboards and blurred routes cannot produce visibility acknowledgements. Disabling sharing hides earlier Seen states. No online/last-seen tracking, exact activity timestamps, background delivery service or new dependency was added. One-time message visibility does not claim photo opening. See [semantics, privacy and device acceptance](MESSAGE_RECEIPTS.md). Hosted rollout follows passing real-backend CI.
+
 ## Phase 26 — Loopnest branding
 
 Added an original lime/cyan linked-loop logo, editable SVG, deterministic PNG generator, opaque app icon and Android adaptive/themed icon layers. The header/loading screen share the mark. Expo config includes the launcher assets and the SDK-compatible native splash plugin. No paid service, downloaded artwork or runtime drawing dependency was added. See [branding assets and native verification limits](BRANDING.md). Native launcher/splash acceptance requires an installed preview/release build; Expo Go only establishes the in-app mark.
+
+Source `4adfe06` passes clean-install audit/quality, both platform exports and real backend tests in [CI run 41132256091](https://github.com/asadabbas717/loopnest/actions/runs/41132256091). On 31 October the live SDK compatibility validator changed to recommend React Native 0.88.1; aligned that patch and added Expo SplashScreen 58.0.12. Live package alignment and all twenty Doctor checks pass. Android native generation succeeds with all six permission-removal directives preserved. Local Expo and Docker remain unstarted.
 
 ## Phase 25 — repeat invitations after a decline
 

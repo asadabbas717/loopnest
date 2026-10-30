@@ -123,3 +123,24 @@ test('invalid or obsolete bookmarks and nonfinite native observations never prod
   assert.equal(bookmarks.at(-1).offset, 0);
   assert.ok(moves.every(Number.isFinite));
 });
+
+test('read visibility excludes loading, restoration, dragging, keyboard and blurred routes', () => {
+  const { scroll } = fixture();
+  scroll.focus({ offset: 200, atEnd: false });
+  assert.equal(scroll.visibleRange(), null);
+  scroll.ready(true);
+  scroll.layout(2000, scroll.ticket());
+  assert.equal(scroll.visibleRange(), null, 'wait for native restoration acknowledgement');
+  scroll.observe(200);
+  assert.deepEqual(scroll.visibleRange(), { top: 200, bottom: 700 });
+  scroll.beginGesture();
+  assert.equal(scroll.visibleRange(), null);
+  scroll.observe(400);
+  scroll.endGesture();
+  assert.deepEqual(scroll.visibleRange(), { top: 400, bottom: 900 });
+  scroll.keyboard(true);
+  assert.equal(scroll.visibleRange(), null);
+  scroll.keyboard(false);
+  scroll.blur();
+  assert.equal(scroll.visibleRange(), null);
+});

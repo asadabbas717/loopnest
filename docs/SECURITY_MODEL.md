@@ -19,6 +19,8 @@ The profile, conversation, message and Storage policies enforce accepted partici
 
 ## Visual protection
 
+Message acknowledgements are private and recipient-bound; read sharing defaults off and Seen requires mutual opt-in. Receipt reads obey the conversation's block/expiry checks, expose no exact activity timestamps and disappear with deleted messages. A foreground app acknowledges delivery metadata; no background push, offline content persistence or human-attention proof is claimed. See [message receipts](MESSAGE_RECEIPTS.md).
+
 Native screenshot/recording prevention is enabled before private screens mount and remains outside navigation/session changes. Setup failure hides private screens. Inactive covers and iOS app-switcher protection supplement Android's secure window. No screenshot-detection permission or broad media-read permission is requested.
 
 The owner authorized `EXPO_PUBLIC_ALLOW_TEST_SCREENSHOTS=true` in local development for UI feedback. A visible banner and accurate copy identify the relaxed policy; screenshots and recording are enabled together. The default/example is false and release runtimes ignore it. A full Metro/Expo Go restart is required when changing it. Test normal capture protection with the flag off.

@@ -47,11 +47,13 @@ export function Page({
   scrollReady = true,
   startAtEnd = false,
   bottomRevision = 0,
+  onVisibleRange,
 }: PropsWithChildren<{
   dock?: 'chats' | 'friends' | 'account';
   scrollReady?: boolean;
   startAtEnd?: boolean;
   bottomRevision?: number;
+  onVisibleRange?: (range: { top: number; bottom: number } | null) => void;
 }>) {
   const router = useRouter();
   const activePath = usePathname();
@@ -60,6 +62,11 @@ export function Page({
   const [path] = useState(activePath);
   const memory = useContext(ScrollMemory);
   const scroll = useRef<KeyboardAwareScrollViewRef>(null);
+  const visibility = useRef(onVisibleRange);
+  const visibilityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useLayoutEffect(() => {
+    visibility.current = onVisibleRange;
+  }, [onVisibleRange]);
   const [scrolling] = useState(() =>
     createScrollIntent({
       startAtEnd,
@@ -67,6 +74,10 @@ export function Page({
       save: (position) => memory?.set(path, position),
     }),
   );
+  const notifyVisibility = useCallback(() => {
+    if (visibilityTimer.current !== null) clearTimeout(visibilityTimer.current);
+    visibilityTimer.current = setTimeout(() => visibility.current?.(scrolling.visibleRange()), 180);
+  }, [scrolling]);
   useLayoutEffect(() => {
     scrolling.setScrollTo((y) => scroll.current?.scrollTo({ y, animated: false }));
   }, [scrolling]);
@@ -76,11 +87,12 @@ export function Page({
     measureFrame.current = requestAnimationFrame(() => {
       measureFrame.current = null;
       const ticket = scrolling.ticket();
-      scroll.current
-        ?.getInnerViewRef()
-        ?.measure((_x, _y, _width, height) => scrolling.layout(height, ticket));
+      scroll.current?.getInnerViewRef()?.measure((_x, _y, _width, height) => {
+        scrolling.layout(height, ticket);
+        notifyVisibility();
+      });
     });
-  }, [scrolling]);
+  }, [scrolling, notifyVisibility]);
   useFocusEffect(
     useCallback(() => {
       scrolling.focus(memory?.get(path));
@@ -101,6 +113,7 @@ export function Page({
   useEffect(
     () => () => {
       if (measureFrame.current !== null) cancelAnimationFrame(measureFrame.current);
+      if (visibilityTimer.current !== null) clearTimeout(visibilityTimer.current);
     },
     [],
   );
@@ -206,16 +219,21 @@ export function Page({
             measure();
           }}
           onContentSizeChange={measure}
-          onScroll={(event) => scrolling.observe(event.nativeEvent.contentOffset.y)}
+          onScroll={(event) => {
+            scrolling.observe(event.nativeEvent.contentOffset.y);
+            notifyVisibility();
+          }}
           onScrollBeginDrag={() => scrolling.beginGesture()}
           onScrollEndDrag={(event) => {
             scrolling.observe(event.nativeEvent.contentOffset.y);
             scrolling.endGesture();
+            notifyVisibility();
           }}
           onMomentumScrollBegin={() => scrolling.beginGesture()}
           onMomentumScrollEnd={(event) => {
             scrolling.observe(event.nativeEvent.contentOffset.y);
             scrolling.endGesture();
+            notifyVisibility();
           }}
           maintainVisibleContentPosition={
             startAtEnd && scrollReady ? { minIndexForVisible: 0 } : undefined

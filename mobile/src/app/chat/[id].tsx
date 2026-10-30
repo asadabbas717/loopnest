@@ -27,6 +27,7 @@ import { RetentionSettings, retentionLabel } from '../../components/RetentionSet
 import { Avatar, Badge, Icon, IconButton, visual } from '../../components/visuals';
 import { fonts, palette } from '../../components/theme';
 import { userErrorMessage } from '../../domain/user-errors';
+import { useSeenMessages } from '../../providers/Receipts';
 import {
   Button,
   Field,
@@ -42,6 +43,21 @@ export default function Chat() {
   const params = useLocalSearchParams<{ id: string }>();
   const id = typeof params.id === 'string' ? params.id : '';
   const { session, profile } = useSession();
+  const markSeen = useSeenMessages();
+  const messageLayouts = useRef(new Map<string, { top: number; bottom: number }>());
+  const visibleMessages = useCallback(
+    (range: { top: number; bottom: number } | null) => {
+      if (!range) return;
+      const ids = [...messageLayouts.current]
+        .filter(
+          ([, box]) =>
+            box.bottom - 16 >= range.top && box.bottom <= range.bottom && box.top < range.bottom,
+        )
+        .map(([mid]) => mid);
+      markSeen(ids);
+    },
+    [markSeen],
+  );
   const [chat, setChat] = useState<Conversation | null>(null);
   const [name, setName] = useState('Conversation');
   const [handle, setHandle] = useState('');
@@ -55,6 +71,11 @@ export default function Chat() {
   const mediaWidth = Math.max(150, Math.min(380, (Math.min(width, 720) - 48) * 0.94));
   const [oneTime, setOneTime] = useState(false);
   const [rows, setRows] = useState<Message[]>([]);
+  useEffect(() => {
+    const current = new Set(rows.map((row) => row.id));
+    for (const mid of messageLayouts.current.keys())
+      if (!current.has(mid)) messageLayouts.current.delete(mid);
+  }, [rows]);
   const [historyReady, setHistoryReady] = useState(false);
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<Photo | null>(null);
@@ -260,6 +281,7 @@ export default function Chat() {
       scrollReady={chat?.status === 'accepted' ? historyReady : true}
       startAtEnd
       bottomRevision={bottomRevision}
+      onVisibleRange={visibleMessages}
     >
       <View style={[visual.between, { marginBottom: 20 }]}>
         <View style={[visual.row, { flex: 1 }]}>
@@ -440,6 +462,14 @@ export default function Chat() {
             .map((message) => (
               <View
                 key={`${message.id}:${connectionRevision}`}
+                onLayout={
+                  message.sender_id !== actor
+                    ? (event) => {
+                        const { y, height } = event.nativeEvent.layout;
+                        messageLayouts.current.set(message.id, { top: y, bottom: y + height });
+                      }
+                    : undefined
+                }
                 style={[
                   styles.card,
                   {
@@ -491,13 +521,46 @@ export default function Chat() {
                 ) : (
                   message.photo_id && <PrivatePhoto id={message.photo_id} />
                 )}
-                <View style={visual.between}>
+                <View style={[visual.between, { flexWrap: 'wrap', gap: 8 }]}>
                   <Text style={{ color: palette.dim, fontFamily: fonts.mono, fontSize: 9 }}>
                     {new Date(message.created_at).toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
                   </Text>
+                  {message.sender_id === actor && (
+                    <View
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                      accessibilityLabel={`Message ${message.delivery ?? 'sent'}`}
+                    >
+                      <Icon
+                        name={
+                          message.delivery === 'sent'
+                            ? 'check'
+                            : message.delivery === 'unknown'
+                              ? 'help-circle'
+                              : 'check-circle'
+                        }
+                        size={12}
+                        color={message.delivery === 'seen' ? palette.cyan : palette.muted}
+                      />
+                      <Text
+                        style={{
+                          fontFamily: fonts.medium,
+                          fontSize: 10,
+                          color: message.delivery === 'seen' ? palette.cyan : palette.muted,
+                        }}
+                      >
+                        {message.delivery === 'seen'
+                          ? 'Seen'
+                          : message.delivery === 'delivered'
+                            ? 'Delivered'
+                            : message.delivery === 'unknown'
+                              ? 'Status unavailable'
+                              : 'Sent'}
+                      </Text>
+                    </View>
+                  )}
                   {message.expires_at && <Icon name="clock" size={12} color={palette.accent} />}
                 </View>
               </View>

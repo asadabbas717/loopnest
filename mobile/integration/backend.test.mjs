@@ -18,6 +18,7 @@ import { userErrorMessage } from '../src/domain/user-errors.ts';
 import { createPhotoUploadApi } from '../src/lib/photo-upload-api.ts';
 import { createAvatarApi } from '../src/lib/avatar-api.ts';
 import jpegCodec from 'jpeg-js';
+import { createReceiptApi } from '../src/lib/receipt-api.ts';
 
 // Never accepts a URL/admin key from environment variables. The runner obtains
 // ephemeral credentials from the project-local CLI and refuses hosted endpoints.
@@ -131,6 +132,83 @@ test(
         },
       );
       let photoId;
+      await t.test(
+        'real receipt acknowledgements preserve read privacy and Realtime delivery states',
+        async () => {
+          const receiptsA = createReceiptApi(() => alice.client),
+            receiptsB = createReceiptApi(() => bob.client),
+            outsider = createReceiptApi(() => eve.client);
+          const mid = randomUUID();
+          await alice.api.send(cid, mid, 'receipt fixture', alice.id);
+          assert.equal((await receiptsA.statuses(cid, [mid])).get(mid), 'sent');
+          await outsider.acknowledge([mid], true, eve.id);
+          await receiptsA.acknowledge([mid], true, alice.id);
+          assert.equal((await receiptsA.statuses(cid, [mid])).get(mid), 'sent');
+          assert.ok((await receiptsB.pending(bob.id)).includes(mid));
+          await receiptsB.acknowledge([mid], false, bob.id);
+          assert.equal((await receiptsA.statuses(cid, [mid])).get(mid), 'delivered');
+          assert.equal(
+            (await alice.api.messages(cid)).find((m) => m.id === mid).delivery,
+            'delivered',
+          );
+          await receiptsB.acknowledge([mid], true, bob.id);
+          assert.equal(
+            (await receiptsA.statuses(cid, [mid])).get(mid),
+            'delivered',
+            'read sharing starts off',
+          );
+          await receiptsA.setSharing(alice.id, true);
+          await receiptsB.setSharing(bob.id, true);
+          // Subscribe to the same conversation metadata signal used by the app.
+          let signal;
+          const observed = new Promise((resolve) => {
+            signal = resolve;
+          });
+          let joined;
+          const connected = new Promise((resolve) => {
+            joined = resolve;
+          });
+          const channel = alice.client
+            .channel(`receipt-test-${runId}`, {
+              config: { postgres_changes_options: { wait: true, timeout: 15000 } },
+            })
+            .on(
+              'postgres_changes',
+              { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `id=eq.${cid}` },
+              () => signal(),
+            )
+            .subscribe((status) => {
+              if (status === 'SUBSCRIBED') joined();
+            });
+          try {
+            await Promise.race([
+              connected,
+              delay(15000).then(() => {
+                throw new Error('Receipt subscription timed out');
+              }),
+            ]);
+            await receiptsB.acknowledge([mid], true, bob.id);
+            await Promise.race([
+              observed,
+              delay(10000).then(() => {
+                throw new Error('Receipt metadata signal did not arrive');
+              }),
+            ]);
+            assert.equal((await receiptsA.statuses(cid, [mid])).get(mid), 'seen');
+            await assert.rejects(receiptsB.acknowledge([mid], true, alice.id));
+            await receiptsB.setSharing(bob.id, false);
+            assert.equal((await receiptsA.statuses(cid, [mid])).get(mid), 'delivered');
+          } finally {
+            await alice.client.removeChannel(channel);
+            await receiptsA.setSharing(alice.id, false);
+            await receiptsB.setSharing(bob.id, false);
+            ok(
+              (await admin.from('messages').delete().eq('id', mid)).error,
+              'receipt fixture cleanup',
+            );
+          }
+        },
+      );
       await t.test(
         'a decline permits a fresh reverse invitation but blocks and consent still apply',
         async () => {

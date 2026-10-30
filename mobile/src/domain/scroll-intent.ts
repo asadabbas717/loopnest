@@ -83,6 +83,10 @@ export function createScrollIntent(options: {
       keyboard = value;
     },
     isFocused: () => active,
+    visibleRange: () =>
+      active && ready && measured && !restoring && !interacting && !keyboard && waiting === null
+        ? { top: actual, bottom: actual + viewport }
+        : null,
     beginGesture() {
       interacting = true;
       waiting = null;

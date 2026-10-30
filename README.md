@@ -8,12 +8,15 @@ Loopnest is in active development. Chats are **access-controlled, not end-to-end
 
 - Email/password accounts, email-code verification, password recovery and encrypted native session persistence.
 - Invitations that require recipient acceptance, bounded message history and Realtime updates.
+- Repeat invitations after a decline, with block enforcement and resend rate limits.
+- Sent/Delivered indicators and optional mutual Seen sharing; [receipt behavior and privacy](docs/MESSAGE_RECEIPTS.md).
 - Private, server-validated JPEG sharing and recipient-only one-time photos.
 - Disappearing messages: whole-hour durations from one hour to thirty days; changes affect new messages.
 - Friends, bilateral blocking/unblocking and private profile pictures with first-name initial fallbacks.
 - Confirmed **Clear chat for both people**, preserving the connection and retention setting.
 - Password-verified account deletion, scoped abuse reporting and moderator review.
 - Native capture prevention, inactive-screen protection and a development-only UI capture opt-in.
+- An original Loopnest logo, platform launcher icons and branded launch configuration; [branding](docs/BRANDING.md).
 
 The mobile app contains no service-role key, advertising or analytics SDK. Media buckets are private. The project uses no Firebase or required paid cloud-build service. Free-tier limits, provider email allowances and distribution costs are explained in [free-tier policy](docs/FREE_TIER.md).
 

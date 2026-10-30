@@ -12,6 +12,7 @@ import { Avatar, Badge, visual } from '../components/visuals';
 import { createAvatarApi } from '../lib/avatar-api';
 import { choosePhoto, discardPhoto } from '../lib/photos';
 import { File } from 'expo-file-system';
+import { createReceiptApi } from '../lib/receipt-api';
 
 export default function Account() {
   const { session, profile, loading, refresh, accountState } = useSession();
@@ -120,6 +121,35 @@ export default function Account() {
                   },
                 ],
               )
+            }
+          />
+          {!deleting && <Notice text={error} />}
+        </View>
+      )}
+      {accountState === 'active' && (
+        <View style={[styles.card, { marginBottom: 20 }]}>
+          <Text style={styles.label}>Read receipts</Text>
+          <Text style={visual.small}>
+            Off by default. Enable to share when a message is visible in your active chat. Seen
+            indicators require both people to enable this. Delivery acknowledgements remain on while
+            the app is active; there is no last-seen or online status.
+          </Text>
+          <Button
+            title={
+              profile?.read_receipts
+                ? 'Read receipts: On — turn off'
+                : 'Read receipts: Off — turn on'
+            }
+            secondary
+            disabled={busy}
+            onPress={() =>
+              run(async () => {
+                await createReceiptApi(backend).setSharing(
+                  session.user.id,
+                  !profile?.read_receipts,
+                );
+                refresh();
+              })
             }
           />
           {!deleting && <Notice text={error} />}

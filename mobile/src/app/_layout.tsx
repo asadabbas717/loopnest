@@ -17,6 +17,7 @@ import { useReducedMotion } from 'react-native-reanimated';
 import { palette } from '../components/theme';
 import { ScrollMemoryProvider } from '../providers/ScrollMemory';
 import { Logo } from '../components/visuals';
+import { ReceiptProvider } from '../providers/Receipts';
 function Navigator() {
   const { session } = useSession();
   const reduced = useReducedMotion();
@@ -64,7 +65,9 @@ function Fonts({ retry }: { retry: () => void }) {
     );
   return (
     <SessionProvider>
-      <Navigator />
+      <ReceiptProvider>
+        <Navigator />
+      </ReceiptProvider>
     </SessionProvider>
   );
 }

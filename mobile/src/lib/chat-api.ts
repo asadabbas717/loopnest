@@ -4,11 +4,13 @@ import { createFriendsApi } from './friends-api.ts';
 import { UserFacingError } from '../domain/user-errors.ts';
 import { expirationDeadline } from '../domain/ephemeral.ts';
 import { invokePrivate } from './private-function.ts';
+import { createReceiptApi, type Delivery } from './receipt-api.ts';
 export type Profile = {
   id: string;
   username: string;
   display_name: string;
   avatar_id: string | null;
+  read_receipts: boolean;
 };
 export type Conversation = {
   id: string;
@@ -30,6 +32,7 @@ export type Message = {
   expires_at: string | null;
   view_once: boolean;
   expires_monotonic?: number;
+  delivery?: Delivery;
 };
 export type ConversationSummary = Conversation & {
   peer_display_name: string;
@@ -41,7 +44,7 @@ export function createChatApi(backend: () => SupabaseClient) {
   async function ownProfile(id: string): Promise<Profile | null> {
     const { data, error } = await backend()
       .from('profiles')
-      .select('id,username,display_name,avatar_id')
+      .select('id,username,display_name,avatar_id,read_receipts')
       .eq('id', id)
       .maybeSingle();
     if (error) throw error;
@@ -130,12 +133,22 @@ export function createChatApi(backend: () => SupabaseClient) {
     });
     if (error) throw error;
     const received = performance.now();
+    // A receipt outage must not hide successfully fetched private messages.
+    const statuses = await createReceiptApi(backend)
+      .statuses(
+        id,
+        data.map((row: Message) => row.id),
+      )
+      .catch(() => new Map<string, Delivery>());
     return (data as (Message & { server_time: string })[])
       .map((row) => ({
         ...row,
+        delivery: statuses.get(row.id) ?? 'unknown',
         expires_monotonic: expirationDeadline(row.expires_at, row.server_time, started, received),
       }))
-      .filter((row) => row.expires_monotonic === undefined || row.expires_monotonic > received);
+      .filter(
+        (row) => row.expires_monotonic === undefined || row.expires_monotonic > performance.now(),
+      );
   }
   async function send(
     id: string,
