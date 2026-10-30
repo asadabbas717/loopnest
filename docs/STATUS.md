@@ -1,5 +1,9 @@
 # Development status
 
+## Phase 25 — repeat invitations after a decline
+
+Declining no longer permanently prevents another invitation. Either person can request again unless blocked; it resets the existing pair to pending and requires the other person's consent. Accepted/pending retries remain idempotent. Each actual new/resend attempt counts toward the existing one-minute cooldown and twenty-per-day cap using private bounded-per-active-account records, preserving quotas when the requester changes. Pair locks serialize opposite-direction calls. Blocked/disabled accounts remain denied and clients cannot read or edit attempt records. New PostgreSQL and real-service regressions cover resends, consent, quota and block behavior. Hosted rollout follows successful CI; see subsequent verification entries.
+
 ## Phase 24 — iOS test-banner safe area
 
 The owner reports the phase 23 retests passed except the iOS test banner overlapping the status bar. The banner now respects the top/side safe area, and a content-area provider measures remaining screen insets so pages do not add the window top inset twice. Capture policy and inactive privacy protection are unchanged. Strict typing/lint, 82 tests and formatting pass. Native banner geometry still needs confirmation on the owner's iPhone; actual one-hour expiry is considered unverified unless explicitly observed.

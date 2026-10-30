@@ -131,6 +131,45 @@ test(
         },
       );
       let photoId;
+      await t.test(
+        'a decline permits a fresh reverse invitation but blocks and consent still apply',
+        async () => {
+          const peers = [];
+          for (const suffix of ['a', 'b']) {
+            const name = `repeat_${suffix}_${runId}`;
+            const email = `${name}@example.test`;
+            const made = await admin.auth.admin.createUser({
+              email,
+              password,
+              email_confirm: true,
+            });
+            ok(made.error, 'repeat fixture account');
+            const id = made.data.user.id;
+            users.push(id);
+            const client = make();
+            ok(
+              (await client.auth.signInWithPassword({ email, password })).error,
+              'repeat fixture sign-in',
+            );
+            const api = createChatApi(() => client);
+            await api.saveProfile(id, name, 'Repeat fixture');
+            peers.push({ client, api, id, name });
+          }
+          const [a, b] = peers;
+          const pending = await a.api.invite(b.name);
+          await b.api.respond(pending, false);
+          await assert.rejects(a.api.invite(b.name), 'resends retain the cooldown');
+          await b.api.blockUser(b.id, a.id);
+          await assert.rejects(a.api.invite(b.name), 'reverse block prevents invitation');
+          await assert.rejects(b.api.invite(a.name), 'own block prevents invitation');
+          await createFriendsApi(() => b.client).setBlocked(b.id, a.id, false);
+          assert.equal(await b.api.invite(a.name), pending);
+          await assert.rejects(b.api.respond(pending, true), 'new requester cannot self-accept');
+          await assert.rejects(b.api.send(pending, randomUUID(), 'before consent', b.id));
+          await a.api.respond(pending, true);
+          assert.equal((await a.api.conversation(pending)).status, 'accepted');
+        },
+      );
       let path;
       let reportedMessageId;
       let laterReport;

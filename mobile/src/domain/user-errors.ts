@@ -68,7 +68,7 @@ const databaseMessages: Record<string, string> = {
   'Message identifier conflict':
     'This send attempt conflicts with an earlier message. Reopen the conversation and try again.',
   'Invitation unavailable':
-    'This invitation is unavailable. Check the username. Existing blocks or a declined invitation can prevent contact.',
+    'This invitation is unavailable. Check the username. A block or an unavailable account can prevent contact.',
   'Invitation limit reached':
     'Invitation limit reached. Wait at least a minute between invitations; up to 20 are allowed per day.',
   'Message limit reached':
