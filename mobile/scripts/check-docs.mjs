@@ -8,7 +8,9 @@ const files = execFileSync('git', ['ls-files', '-z', '--', '*.md'], { cwd: root,
   .filter(Boolean);
 const broken = [];
 for (const file of files) {
-  const markdown = readFileSync(resolve(root, file), 'utf8').replace(/```[^]*?```/g, '');
+  const markdown = new TextDecoder('utf-8', { fatal: true })
+    .decode(readFileSync(resolve(root, file)))
+    .replace(/```[^]*?```/g, '');
   for (const match of markdown.matchAll(/!?\[[^\]\n]*\]\(([^)\n]+)\)/g)) {
     const target = match[1].trim().replace(/^<|>$/g, '').split('#')[0];
     if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('//')) continue;

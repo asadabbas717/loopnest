@@ -30,7 +30,8 @@
     "docs:check": "node scripts/check-docs.mjs",
     "maintenance:install": "node scripts/install-maintenance.mjs",
     "maintenance:configure": "node scripts/configure-maintenance.mjs",
-    "maintenance:health": "node scripts/maintenance-health.mjs"
+    "maintenance:health": "node scripts/maintenance-health.mjs",
+    "capacity:status": "node scripts/capacity-status.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/space-grotesk": "^0.4.1",

@@ -1,8 +1,14 @@
 # Development status
 
-## Phase 28 � bounded automatic maintenance
+## Phase 29 — content-capacity safeguards; public-abuse work partial
 
-Added a server-only cleanup worker, durable lease/run records, bounded metadata pruning, retired-avatar cleanup and unfinished individual-deletion retries. Operator provisioning uses Vault/pg_cron/pg_net, skips empty backlog and provides a credential-free health summary. CI exercises the real extensions and worker without starting local Docker. CAPTCHA setup is deferred at the owner�s request; public signup remains a release gate. See [operation and monitoring](AUTOMATED_MAINTENANCE.md). Hosted rollout follows successful CI.
+Added private retained/daily ceilings for messages, photo reservations, avatars and app profiles. Aggregate UTC counters survive account/content deletion; cross-account admission is serialized. Safe warnings distinguish storage capacity from daily limits. Operators get aggregate-only telemetry and cannot raise ceilings without a migration. SQL tests cover reset attempts/privileges and CI races two accounts for one remaining slot. See [limits and explicit gaps](PROJECT_CAPACITY.md). CAPTCHA setup is deferred at the owner's request. Auth/request/egress protections remain incomplete; this phase/public release is not complete.
+
+## Phase 28 — bounded automatic maintenance
+
+Added a server-only cleanup worker, durable lease/run records, bounded metadata pruning, retired-avatar cleanup and unfinished individual-deletion retries. Operator provisioning uses Vault/pg_cron/pg_net, skips empty backlog and provides a credential-free health summary. CI exercises the real extensions and worker without starting local Docker. CAPTCHA setup is deferred at the owner’s request; public signup remains a release gate. See [operation and monitoring](AUTOMATED_MAINTENANCE.md). Hosted rollout follows successful CI.
+
+Source `d58bb03` passes all 90 local tests and complete quality/platform gates, plus real scheduler/Vault/pg_net/Edge verification in [CI run 41143135945](https://github.com/asadabbas717/loopnest/actions/runs/41143135945). Isolated-stack installation uses passwordless container-local psql; hosted installation uses the authorized Management API. Test fixtures explicitly restore their account after the earlier account-switch scenario. No local Docker engine or Expo server was started.
 
 ## Additional feature — individual message/photo deletion
 

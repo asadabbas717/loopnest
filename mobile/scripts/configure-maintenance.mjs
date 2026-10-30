@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import { localCli } from './backend.mjs';
 import { operatorTarget, operatorClient } from './operator-client.mjs';
 try {
-  const target = await operatorTarget(process.argv.slice(2));
+  const args = process.argv.slice(2),
+    runNow = args.includes('--run-now');
+  if (args.filter((arg) => arg === '--run-now').length > 1) throw new Error('Invalid options');
+  const target = await operatorTarget(args.filter((arg) => arg !== '--run-now'));
   let token;
   if (target.ref) {
     token = randomBytes(32).toString('hex');
@@ -43,6 +46,17 @@ try {
     maintenance_token: token,
   });
   if (error || !Number.isInteger(data)) throw new Error('Scheduler configuration failed');
+  if (runNow) {
+    const response = await fetch(target.url + '/functions/v1/content-maintenance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-maintenance-token': token },
+      body: '{"dry_run":false}',
+      signal: AbortSignal.timeout(120000),
+    });
+    if (!response.ok) throw new Error('Initial maintenance run failed');
+    const result = await response.json();
+    console.log(JSON.stringify({ initialRun: result }));
+  }
   console.log(
     'Verified count-only worker access and enabled cleanup at 00:17, 06:17, 12:17 and 18:17 UTC, only when eligible work exists. Token is kept in server secrets/Vault, not mobile configuration.',
   );

@@ -22,6 +22,8 @@ npm run maintenance:configure -- --project-ref YOUR_20_LETTER_PROJECT_REF
 npm run maintenance:health -- --project-ref YOUR_20_LETTER_PROJECT_REF
 ```
 
+For an explicitly requested first cleanup after count-only verification, add `--run-now` to Configure. It runs the same bounded worker and prints only aggregate results. A first successful run establishes health before waiting for the next scheduled tick.
+
 Install creates functions without enabling a schedule. Configure rotates the dedicated token in server secrets, verifies a count-only Edge request, then stores it in Vault and enables the named job. It prints no credentials and writes none locally. A partial failure is fail-closed; rerun Configure to reconcile/rotate both copies. No plan upgrade or paid service is provisioned.
 
 Health prints only schedule/run/backlog summaries and exits unsuccessfully for disabled scheduling, failed/stuck runs, failed dispatches or overdue pending work. Before the first successful run it treats pending work as unverified. Check after deployment and regularly; no external alert-delivery service is configured. Inspect Supabase Cron run history and Edge logs when health fails, keeping credential-bearing diagnostics out of public issues.

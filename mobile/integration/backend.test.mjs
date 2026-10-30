@@ -1277,6 +1277,42 @@ test(
           }
         },
       );
+      await t.test(
+        'project capacity is enforced atomically across concurrent authenticated accounts',
+        async () => {
+          assert.ok(
+            (await bob.client.rpc('project_capacity_status')).error,
+            'app users cannot read private capacity telemetry',
+          );
+          const before = await admin.rpc('project_capacity_status');
+          ok(before.error, 'operator capacity status');
+          assert.ok(
+            before.data.retained.photos < 399,
+            'fixture has room under the fixed deployment ceiling',
+          );
+          await localSQL(
+            'update private.project_limits set photo_cap=(select count(*)+1 from public.photo_assets)',
+          );
+          try {
+            const shared = await bob.api.invite(eve.handle);
+            const attempts = await Promise.all([
+              bob.client.rpc('reserve_photo', { cid: shared }),
+              eve.client.rpc('reserve_photo', { cid: shared }),
+            ]);
+            assert.equal(
+              attempts.filter((r) => !r.error).length,
+              1,
+              'exactly one final global slot is admitted',
+            );
+            assert.equal(
+              attempts.filter((r) => r.error?.message === 'Project photo capacity reached').length,
+              1,
+            );
+          } finally {
+            await localSQL('update private.project_limits set photo_cap=400');
+          }
+        },
+      );
     } finally {
       for (const client of clients) await client.removeAllChannels();
       // Delete physical objects through Storage before deleting synthetic test accounts.

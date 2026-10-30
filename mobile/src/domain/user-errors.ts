@@ -58,6 +58,21 @@ const authMessages: Record<string, string> = {
   bad_jwt: errorMessages.auth_required,
 };
 const databaseMessages: Record<string, string> = {
+  'Project capacity unavailable': 'This service is temporarily at capacity. Try again later.',
+  'Project message capacity reached':
+    'Message storage is full. Delete messages you no longer need or try again later.',
+  'Project photo capacity reached':
+    'Photo storage is full. Delete photos you no longer need or try again later.',
+  'Project avatar capacity reached': 'Profile-photo storage is full. Try again later.',
+  'Project profile capacity reached': 'New profiles are temporarily unavailable. Try again later.',
+  'Project message rate reached':
+    'The service has reached its daily message limit. Try again after the daily reset.',
+  'Project photo rate reached':
+    'The service has reached its daily photo limit. Try again after the daily reset.',
+  'Project avatar rate reached':
+    'The service has reached its daily profile-photo limit. Try again after the daily reset.',
+  'Project profile rate reached':
+    'New profiles have reached the daily limit. Try again after the daily reset.',
   'Avatar limit reached':
     'Profile-photo limit reached. Up to 5 upload attempts per day are allowed. Remove/reset your photo to clean up old uploads.',
   'Avatar image too large':
@@ -79,7 +94,7 @@ const databaseMessages: Record<string, string> = {
     'Message limit reached. Wait before sending again; limits are 30 per minute and 500 per day.',
   'Photo limit reached':
     'Photo upload limit reached. Up to 20 reservations per day and 100 retained photos are allowed.',
-  'Report limit reached': 'You can submit up to 10 new reports per day. Try again tomorrow.',
+  'Report limit reached': 'You can submit up to 10 new reports per day. Try again later.',
   'Photo unavailable': 'This photo is no longer available to send. Choose the photo again.',
   'Session changed': 'Your account changed. Reopen this screen before continuing.',
   'Connection unavailable': 'This connection is unavailable. Refresh your Friends list.',
