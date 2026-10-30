@@ -26,6 +26,15 @@ Official instructions: [Expo device startup](https://docs.expo.dev/get-started/s
 
 ## Functional checklist
 
+### Focused follow-up — 31 October
+
+- On iOS, the capture-test banner must sit below the status-bar clock/notch without overlapping it. Check returning from background and opening the keyboard too.
+- Decline a disposable invitation. After the requester's one-minute cooldown, resend by username: the recipient must receive a fresh pending request and the requester cannot self-accept. A block in either direction must deny another request. Accepted/pending retries must not duplicate conversations. The existing twenty-attempt daily cap includes resends.
+- Check the Loopnest mark on Home and loading screens. Installed launcher/themed icons and native splash need preview/release-build testing; Expo Go keeps its own host icon.
+- Follow the [two-phone receipt checklist](MESSAGE_RECEIPTS.md). Enable Account → Read receipts on both phones only when testing Seen; default-off sharing must remain private.
+
+### General regression
+
 - Sign up/confirm two owned emails, sign in, reset a password and verify wrong credentials have accurate warnings. Check paste/autofill and long forms with the keyboard.
 - Invite/accept, exchange text and regular photos, block/unblock and return to the conversation. Verify outsider/blocked access is denied.
 - Interrupt/reconnect networking; verify catch-up, subsequent live delivery and retry without duplicates. See [connection reliability](CONNECTION_RELIABILITY.md).
