@@ -19,6 +19,7 @@ import { createPhotoUploadApi } from '../src/lib/photo-upload-api.ts';
 import { createAvatarApi } from '../src/lib/avatar-api.ts';
 import jpegCodec from 'jpeg-js';
 import { createReceiptApi } from '../src/lib/receipt-api.ts';
+import { localSQL } from '../scripts/local-sql.mjs';
 
 // Never accepts a URL/admin key from environment variables. The runner obtains
 // ephemeral credentials from the project-local CLI and refuses hosted endpoints.
@@ -1224,19 +1225,11 @@ test(
             );
             const started = Date.now();
             const query = JSON.parse(
-              await localCli([
-                'db',
-                'query',
-                '--local',
-                'select private.dispatch_content_maintenance() as request_id',
-                '-o',
-                'json',
-              ]),
+              await localSQL(
+                "select json_build_object('request_id',private.dispatch_content_maintenance())",
+              ),
             );
-            assert.ok(
-              Number.isInteger(query.rows[0].request_id),
-              'real pg_net request was enqueued',
-            );
+            assert.ok(Number.isInteger(query.request_id), 'real pg_net request was enqueued');
             let complete = false;
             for (let i = 0; i < 120; i++) {
               const health = await admin.rpc('content_maintenance_health');

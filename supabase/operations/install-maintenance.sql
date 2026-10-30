@@ -71,3 +71,4 @@ $$;
 revoke all on function public.configure_content_maintenance(text,text),public.disable_content_maintenance(),public.content_maintenance_schedule_health() from public,anon,authenticated;
 grant execute on function public.configure_content_maintenance(text,text),public.disable_content_maintenance(),public.content_maintenance_schedule_health() to service_role;
 commit;
+notify pgrst,'reload schema';
