@@ -1121,6 +1121,10 @@ test(
       await t.test(
         'scheduled maintenance uses Vault and pg_net, preserves live content and retries private deletion work',
         async () => {
+          ok(
+            (await bob.client.auth.signInWithPassword({ email: bob.email, password })).error,
+            'restore Bob fixture identity after account-switch test',
+          );
           const token = readFileSync(
             new URL('../../supabase/functions/.env', import.meta.url),
             'utf8',
