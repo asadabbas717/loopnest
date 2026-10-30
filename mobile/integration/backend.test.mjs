@@ -781,16 +781,15 @@ test(
       await t.test(
         'individual deletion removes real photo bytes and text, rejects peer deletion and prevents resend resurrection',
         async () => {
-          const assetId = await validatedAsset(alice);
-          const asset = await admin.from('photo_assets').select('path').eq('id', assetId).single();
-          ok(asset.error, 'individual deletion fixture path');
+          const asset = await validatedAsset(alice);
+          const assetId = asset.id;
           const mid = randomUUID();
           await alice.api.send(cid, mid, 'delete this photo', alice.id, assetId);
           await assert.rejects(bob.api.deleteMessage(cid, mid, bob.id));
           await assert.rejects(eve.api.deleteMessage(cid, mid, eve.id));
           await alice.api.deleteMessage(cid, mid, alice.id);
           assert.ok(
-            (await admin.storage.from('chat-photos').download(asset.data.path)).error,
+            (await admin.storage.from('chat-photos').download(asset.path)).error,
             'physical bytes removed',
           );
           assert.equal(
