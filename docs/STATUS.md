@@ -1,5 +1,9 @@
 # Development status
 
+## Phase 24 — iOS test-banner safe area
+
+The owner reports the phase 23 retests passed except the iOS test banner overlapping the status bar. The banner now respects the top/side safe area, and a content-area provider measures remaining screen insets so pages do not add the window top inset twice. Capture policy and inactive privacy protection are unchanged. Strict typing/lint, 82 tests and formatting pass. Native banner geometry still needs confirmation on the owner's iPhone; actual one-hour expiry is considered unverified unless explicitly observed.
+
 ## Phase 23 — two-device feedback and scroll/keyboard correction
 
 The owner completed Android and iOS testing: authentication/autofill/password controls, regular photos, retention drafts, one-time opening/closing, profiles, blocking, shared clearing, account isolation and deletion passed. The owner clarified that message catch-up and sending work after reconnecting on iOS too. Actual one-hour expiry was not observed. iOS sign-up/deletion keyboard visibility and chat scroll continuity failed; these remain device retest items. See [acceptance and focused retest](DEVICE_ACCEPTANCE_2026_10_29.md).

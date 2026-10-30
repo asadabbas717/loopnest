@@ -8,6 +8,7 @@ import {
 } from 'expo-screen-capture';
 import { createScreenProtection } from '../domain/screen-protection';
 import { captureTesting } from '../lib/privacy-config';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 const protectionKey = 'loopnest-private';
 // Keep a single lease manager through Fast Refresh as well as normal mounts.
@@ -79,18 +80,22 @@ export function PrivacyBoundary({ children }: PropsWithChildren) {
   return (
     <View style={{ flex: 1 }}>
       {captureTesting && (
-        <View style={{ backgroundColor: '#493311', paddingHorizontal: 16, paddingVertical: 10 }}>
-          <Text style={{ color: '#FFE3A3', textAlign: 'center', fontSize: 12 }}>
-            UI TEST MODE · Screenshots and recording enabled
-          </Text>
-        </View>
+        <SafeAreaView edges={['top', 'left', 'right']} style={{ backgroundColor: '#493311' }}>
+          <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
+            <Text style={{ color: '#FFE3A3', textAlign: 'center', fontSize: 12 }}>
+              UI TEST MODE · Screenshots and recording enabled
+            </Text>
+          </View>
+        </SafeAreaView>
       )}
       <View
         style={{ flex: 1 }}
         accessibilityElementsHidden={!foreground}
         importantForAccessibility={foreground ? 'auto' : 'no-hide-descendants'}
       >
-        {children}
+        {/* Measure screen insets below the banner rather than applying the
+            window's top inset a second time inside every page. */}
+        <SafeAreaProvider>{children}</SafeAreaProvider>
       </View>
       {!foreground && (
         <View style={[StyleSheet.absoluteFill, privacy.center]}>
