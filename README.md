@@ -34,7 +34,7 @@ npm ci
 cp .env.example .env
 ```
 
-Follow [backend setup](supabase/README.md) to apply migrations, deploy all five Edge Functions, configure code-email delivery and obtain the HTTPS project URL and public `sb_publishable_…` key. Put only those public values in the ignored `mobile/.env`. Keep `EXPO_PUBLIC_USE_LOCAL_BACKEND=false` for hosted testing.
+Follow [backend setup](supabase/README.md) to apply migrations, deploy all seven Edge Functions, configure code-email delivery and obtain the HTTPS project URL and public `sb_publishable_…` key. Put only those public values in the ignored `mobile/.env`. Keep `EXPO_PUBLIC_USE_LOCAL_BACKEND=false` for hosted testing.
 
 From `mobile`:
 

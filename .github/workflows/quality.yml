@@ -46,7 +46,9 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
       - run: npm ci
+      - run: node scripts/prepare-local-maintenance.mjs
       - run: npm run backend:start
+      - run: node scripts/install-maintenance.mjs --local
       - run: npm run test:integration
       - if: always()
         run: npm run backend:stop

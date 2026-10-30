@@ -1117,6 +1117,169 @@ test(
           await assert.rejects(alice.api.send(cid, randomUUID(), 'stale send', alice.id));
         },
       );
+      await t.test(
+        'scheduled maintenance uses Vault and pg_net, preserves live content and retries private deletion work',
+        async () => {
+          const token = readFileSync(
+            new URL('../../supabase/functions/.env', import.meta.url),
+            'utf8',
+          ).match(/^LOOPNEST_MAINTENANCE_TOKEN=([a-f0-9]{64})\s*$/m)?.[1];
+          assert.ok(token, 'local CI-only worker token is configured');
+          const invoke = (body = {}, secret = token) =>
+            fetch(`${local.url}/functions/v1/content-maintenance`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-maintenance-token': secret },
+              body: JSON.stringify(body),
+            });
+          assert.equal((await invoke({}, 'b'.repeat(64))).status, 401);
+          assert.ok(
+            (await bob.client.rpc('begin_content_maintenance')).error,
+            'clients cannot acquire a cleanup lease',
+          );
+          assert.ok(
+            (
+              await bob.client.rpc('configure_content_maintenance', {
+                project_url: 'http://kong:8000',
+                maintenance_token: token,
+              })
+            ).error,
+            'clients cannot configure schedules',
+          );
+          ok(
+            (
+              await admin.rpc('configure_content_maintenance', {
+                project_url: 'http://kong:8000',
+                maintenance_token: token,
+              })
+            ).error,
+            'operator configures Vault schedule',
+          );
+          try {
+            assert.equal(
+              (await admin.rpc('content_maintenance_schedule_health')).data.enabled,
+              true,
+            );
+            ok(
+              (await admin.rpc('disable_content_maintenance')).error,
+              'disable automatic firing in test; dispatch explicitly below',
+            );
+            const maintenanceCid = await bob.api.invite(eve.handle);
+            const upload = createPhotoUploadApi(() => bob.client);
+            const ids = [];
+            for (const text of ['pending individual delete', 'expired photo', 'keep live photo']) {
+              const id = await upload.upload(
+                maintenanceCid,
+                jpeg.buffer.slice(jpeg.byteOffset, jpeg.byteOffset + jpeg.byteLength),
+                bob.id,
+              );
+              const row = await admin.from('photo_assets').select('path').eq('id', id).single();
+              ok(row.error, 'worker fixture path');
+              paths.push(row.data.path);
+              const message = randomUUID();
+              await bob.api.send(maintenanceCid, message, text, bob.id, id);
+              ids.push({ id, path: row.data.path, message });
+            }
+            ok(
+              (
+                await admin.rpc('begin_message_delete', {
+                  cid: maintenanceCid,
+                  mid: ids[0].message,
+                  actor: bob.id,
+                })
+              ).error,
+              'freeze synthetic deletion without deleting its bytes',
+            );
+            ok(
+              (
+                await admin
+                  .from('messages')
+                  .update({ expires_at: new Date(Date.now() - 1000).toISOString() })
+                  .eq('id', ids[1].message)
+              ).error,
+              'expire synthetic photo',
+            );
+            const textId = randomUUID();
+            await bob.api.send(maintenanceCid, textId, 'expired synthetic text', bob.id);
+            ok(
+              (
+                await admin
+                  .from('messages')
+                  .update({ expires_at: new Date(Date.now() - 1000).toISOString() })
+                  .eq('id', textId)
+              ).error,
+              'expire synthetic text',
+            );
+            await createAvatarApi(() => bob.client).upload(
+              bob.id,
+              jpeg.buffer.slice(jpeg.byteOffset, jpeg.byteOffset + jpeg.byteLength),
+            );
+            const avatar = `${bob.id}/${(await bob.api.ownProfile(bob.id)).avatar_id}.jpg`;
+            avatarPaths.push(avatar);
+            const dry = await invoke();
+            assert.equal(dry.status, 200);
+            assert.equal((await dry.json()).dryRun, true);
+            assert.ok(
+              !(await admin.storage.from('chat-photos').download(ids[1].path)).error,
+              'dry-run does not remove eligible bytes',
+            );
+            const started = Date.now();
+            const query = JSON.parse(
+              await localCli([
+                'db',
+                'query',
+                '--local',
+                'select private.dispatch_content_maintenance() as request_id',
+                '-o',
+                'json',
+              ]),
+            );
+            assert.ok(
+              Number.isInteger(query.rows[0].request_id),
+              'real pg_net request was enqueued',
+            );
+            let complete = false;
+            for (let i = 0; i < 120; i++) {
+              const health = await admin.rpc('content_maintenance_health');
+              ok(health.error, 'worker health');
+              if (
+                health.data.runs.some(
+                  (r) => r.status === 'success' && Date.parse(r.finished_at) >= started,
+                )
+              ) {
+                complete = true;
+                break;
+              }
+              await delay(250);
+            }
+            assert.ok(complete, 'scheduled worker completed successfully');
+            for (const item of ids.slice(0, 2))
+              assert.ok(
+                (await admin.storage.from('chat-photos').download(item.path)).error,
+                'eligible physical bytes removed',
+              );
+            assert.ok(
+              !(await admin.storage.from('chat-photos').download(ids[2].path)).error,
+              'live photo remains',
+            );
+            assert.ok(
+              !(await admin.storage.from('profile-photos').download(avatar)).error,
+              'current avatar remains',
+            );
+            assert.equal(
+              (await bob.api.messages(maintenanceCid)).some((m) => m.id === textId),
+              false,
+            );
+            assert.deepEqual(await bob.api.pendingMessageDeletions(maintenanceCid, bob.id), []);
+            assert.equal(
+              (await invoke({ dry_run: false })).status,
+              200,
+              'repeat cleanup is idempotent',
+            );
+          } finally {
+            ok((await admin.rpc('disable_content_maintenance')).error, 'test schedule stopped');
+          }
+        },
+      );
     } finally {
       for (const client of clients) await client.removeAllChannels();
       // Delete physical objects through Storage before deleting synthetic test accounts.

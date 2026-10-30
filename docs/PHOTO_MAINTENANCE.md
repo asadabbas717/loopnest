@@ -1,6 +1,6 @@
 # Content maintenance and retention
 
-Physical cleanup is an explicit operator workflow. No timer or paid worker is installed. Database rules deny expired/consumed media immediately according to their access policy; physical objects and metadata require successful cleanup. Do not promise exact physical deletion times.
+Physical cleanup supports a bounded scheduled worker and explicit operator commands. See [automatic scheduling, security and health checks](AUTOMATED_MAINTENANCE.md) and [tested/hosted status](STATUS.md). Database rules deny expired/consumed media immediately according to their access policy; physical objects and metadata require successful cleanup. Do not promise exact physical deletion times.
 
 ## Commands
 
@@ -40,6 +40,6 @@ Profile-photo cleanup is separate: replacement/removal revokes reads first, then
 
 ## Operating limits
 
-Preview and run maintenance regularly during private testing; inspect failures and remaining counts. Monitored scheduling, global quota/abuse alerts, retention/support procedures and backup policy remain public-release work. Blocking revokes access but does not erase unexpired history. Clear Chat removes one shared history for both participants; account erasure removes affected conversations/media from both participants. Neither can revoke downloaded copies or provider backups.
+Preview and run maintenance regularly during private testing; inspect failures and remaining counts. The scheduler records private run/lease summaries and provides an operator health command. External alert delivery, global quota/abuse controls, retention/support procedures and backup policy remain public-release work. Blocking revokes access but does not erase unexpired history. Clear Chat removes one shared history for both participants; account erasure removes affected conversations/media from both participants. Neither can revoke downloaded copies or provider backups.
 
 Injected failure tests verify physical-delete ordering and bounded work. Embedded PostgreSQL and real-service CI verify privileges, expiry, Storage deletion and quotas. Refer to [STATUS.md](STATUS.md) for the exact tested/deployed revision.

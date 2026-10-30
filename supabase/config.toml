@@ -71,3 +71,7 @@ verify_jwt = false
 [functions.delete-message]
 # Explicit Auth.getUser; only the sender can request shared deletion.
 verify_jwt = false
+
+[functions.content-maintenance]
+# Dedicated server-only token; no user, anonymous or service-role bearer fallback.
+verify_jwt = false

@@ -1,8 +1,12 @@
 # Development status
 
+## Phase 28 — bounded automatic maintenance
+
+Added a server-only cleanup worker, durable lease/run records, bounded metadata pruning, retired-avatar cleanup and unfinished individual-deletion retries. Operator provisioning uses Vault/pg_cron/pg_net, skips empty backlog and provides a credential-free health summary. CI exercises the real extensions and worker without starting local Docker. CAPTCHA setup is deferred at the owner’s request; public signup remains a release gate. See [operation and monitoring](AUTOMATED_MAINTENANCE.md). Hosted rollout follows successful CI.
+
 ## Additional feature â€” individual message/photo deletion
 
-Added confirmed sender-only Delete for both, including captions and regular/one-time attachments. Durable pending jobs revoke just the selected content, with physical Storage deletion before final metadata removal and visible, recoverable retries. History, moderation and receipt reads exclude pending deletions. Existing quota/retry tombstones prevent near-term resend resurrection and quota resets. No new dependency or native permission was added. See [behavior and device acceptance](INDIVIDUAL_DELETION.md). Deployment follows complete automated verification.
+Added confirmed sender-only Delete for both, including captions and regular/one-time attachments. Durable pending jobs revoke just the selected content, with physical Storage deletion before final metadata removal and visible, recoverable retries. History, moderation and receipt reads exclude pending deletions. Existing quota/retry tombstones prevent near-term resend resurrection and quota resets. No new dependency or native permission was added. See [behavior and device acceptance](INDIVIDUAL_DELETION.md). Source `85d4a0d` passes 87 local tests, clean-install quality/audit, both platform exports and real backend verification in [CI run 41140264395](https://github.com/asadabbas717/loopnest/actions/runs/41140264395). Applied only `202610310003_delete_message.sql` and deployed `delete-message`; hosted anonymous requests are denied (401). No hosted message/photo was selected for deletion. Native confirmation/delete/retry acceptance remains pending.
 
 ### Owner acceptance â€” 31 October
 

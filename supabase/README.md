@@ -6,7 +6,7 @@ Use a new, isolated **Supabase Free** project and synthetic content. This rewrit
 
 1. Create a project in a Free organization and keep paid add-ons disabled.
 2. Apply every file in `migrations/` in filename order, once, through the CLI migrations workflow or SQL editor. They enforce accepted membership, blocking, private media, server validation, expiry, shared clearing, private avatars, quotas, erasure and moderation. Add new migrations for changes; never rewrite already-applied history.
-3. Deploy **all five Edge Functions** from the repository root using the pinned CLI in `mobile/node_modules`: `upload-photo`, `open-photo`, `clear-chat`, `profile-photo` and `delete-account`. For a fresh project, the following is one example after operator login/linking:
+3. Deploy **all seven Edge Functions** from the repository root using the pinned CLI in `mobile/node_modules`: `upload-photo`, `open-photo`, `clear-chat`, `profile-photo`, `delete-account`, `delete-message` and `content-maintenance`. For a fresh project, the following is one example after operator login/linking:
 
 ```bash
 cd mobile
@@ -20,9 +20,11 @@ npx supabase --workdir .. functions deploy upload-photo
 npx supabase --workdir .. functions deploy open-photo
 npx supabase --workdir .. functions deploy clear-chat
 npx supabase --workdir .. functions deploy profile-photo
+npx supabase --workdir .. functions deploy delete-message
+npx supabase --workdir .. functions deploy content-maintenance
 ```
 
-For an existing project, update account erasure before enabling new profile uploads so profile bytes are included in cleanup. Functions use platform service credentials only on the server. Their `verify_jwt=false` gateway setting delegates validation to explicit `Auth.getUser`; it is not anonymous authorization. Browser-origin requests are rejected.
+For an existing project, update account erasure before enabling new profile uploads so profile bytes are included in cleanup. Functions use platform service credentials only on the server. The six user-facing functions delegate `verify_jwt=false` gateway validation to explicit `Auth.getUser`; the maintenance worker instead requires its dedicated server-only token. These settings are not anonymous authorization. Browser-origin requests are rejected.
 
 4. Keep **Confirm email** enabled, require passwords of at least 12 characters and review Auth signup/email rate limits. Configure both confirmation and recovery templates to include `{{ .Token }}`; committed templates are in `templates/`. The app accepts codes and does not consume auth deep links. Recovery uses an isolated, nonpersistent client and closes its SDK resources on exit.
 5. Configure an SMTP provider within its free allowance for test addresses you own. Supabase's default provider is restricted; this project's hosted setup refused custom code templates until custom SMTP was configured. The owner's Brevo configuration is external to this repo. Never commit SMTP credentials or disable email confirmation to bypass delivery setup.
@@ -31,11 +33,12 @@ For an existing project, update account erasure before enabling new profile uplo
 
 ## Optional local backend
 
-Docker is required only for this path. When intentionally ready, from `mobile` run:
+Docker is required only for this path. Before starting, prepare the ignored local worker token as described in [automated maintenance](../docs/AUTOMATED_MAINTENANCE.md); the full integration suite requires it. When intentionally ready, from `mobile` run:
 
 ```bash
 npm ci
 npm run backend:start
+npm run maintenance:install -- --local
 npm run backend:env -- android  # Android emulator
 # Or: npm run backend:env       # iOS Simulator
 npm run test:integration
@@ -52,4 +55,4 @@ Stopping the local stack preserves data. CI uses an isolated Linux stack and doe
 
 Both `chat-photos` and `profile-photos` are private. Clients cannot upload unvalidated bytes directly. One-time photos have no ordinary Storage download path; the authenticated recipient claim returns non-cacheable bytes once. Profile images are limited to current validated media visible to the owner and accepted, unblocked contacts. Account/shared clearing removes physical files before final metadata deletion.
 
-Review [security model](../docs/SECURITY_MODEL.md), [manual content maintenance](../docs/PHOTO_MAINTENANCE.md), [ephemeral privacy](../docs/EPHEMERAL_PRIVACY.md), [account erasure](../docs/ACCOUNT_ERASURE.md) and [moderation](../docs/MODERATION.md). A monitored scheduler, global abuse controls, support/appeal processes and backup/recovery policy remain release gates. Do not deploy to another person's backend without authorization.
+Review [security model](../docs/SECURITY_MODEL.md), [manual content maintenance](../docs/PHOTO_MAINTENANCE.md), [ephemeral privacy](../docs/EPHEMERAL_PRIVACY.md), [account erasure](../docs/ACCOUNT_ERASURE.md) and [moderation](../docs/MODERATION.md). See [scheduled cleanup and health monitoring](../docs/AUTOMATED_MAINTENANCE.md). External alert delivery, global abuse controls, support/appeal processes and backup/recovery policy remain release gates. Do not deploy to another person's backend without authorization.
