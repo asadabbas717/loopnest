@@ -18,7 +18,7 @@ Reviewed the native auth/session lifecycle, client account binding, SQL/Storage 
 
 The lock migration follows the installed SDK's [official coordination notes](https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md). The encrypted vault's own serialized/chunked storage behavior remains in place.
 
-Expo 58.0.21's bundled native-template table recommends React Native 0.88.1, while the live Expo Go compatibility validator requires 0.88.0. Retain the tested 0.88.0 for the current Expo Go workflow; do not exclude the package from validation to hide that disagreement. Native generation preserves all six permission-removal directives and emits the template-version advisory. Signed builds remain unverified.
+At the phase 22 review, Expo 58.0.21's native-template table recommended React Native 0.88.1 while the live Expo Go validator required 0.88.0. On 31 October the live validator also requires 0.88.1, so phase 26 aligns to that patch without excluding validation. Native generation preserves all six permission-removal directives. Signed builds remain unverified.
 
 ## Verification and rollout
 

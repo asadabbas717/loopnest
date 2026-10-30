@@ -21,33 +21,12 @@ export function Icon({
 }
 export function Logo({ size = 32 }: { size?: number }) {
   return (
-    <View
+    <Image
+      source={require('../../assets/brand/mark.png')}
+      style={{ width: size, height: size }}
+      contentFit="contain"
       accessible={false}
-      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
-    >
-      <View
-        style={{
-          position: 'absolute',
-          width: size * 0.68,
-          height: size * 0.68,
-          borderColor: palette.accent,
-          borderWidth: 2,
-          borderRadius: size * 0.23,
-          transform: [{ rotate: '-32deg' }, { translateX: -3 }],
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          width: size * 0.68,
-          height: size * 0.68,
-          borderColor: palette.cyan,
-          borderWidth: 2,
-          borderRadius: size * 0.23,
-          transform: [{ rotate: '32deg' }, { translateX: 3 }],
-        }}
-      />
-    </View>
+    />
   );
 }
 export function Avatar({

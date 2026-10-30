@@ -1,8 +1,14 @@
 # Development status
 
+## Phase 26 — Loopnest branding
+
+Added an original lime/cyan linked-loop logo, editable SVG, deterministic PNG generator, opaque app icon and Android adaptive/themed icon layers. The header/loading screen share the mark. Expo config includes the launcher assets and the SDK-compatible native splash plugin. No paid service, downloaded artwork or runtime drawing dependency was added. See [branding assets and native verification limits](BRANDING.md). Native launcher/splash acceptance requires an installed preview/release build; Expo Go only establishes the in-app mark.
+
 ## Phase 25 — repeat invitations after a decline
 
 Declining no longer permanently prevents another invitation. Either person can request again unless blocked; it resets the existing pair to pending and requires the other person's consent. Accepted/pending retries remain idempotent. Each actual new/resend attempt counts toward the existing one-minute cooldown and twenty-per-day cap using private bounded-per-active-account records, preserving quotas when the requester changes. Pair locks serialize opposite-direction calls. Blocked/disabled accounts remain denied and clients cannot read or edit attempt records. New PostgreSQL and real-service regressions cover resends, consent, quota and block behavior. Hosted rollout follows successful CI; see subsequent verification entries.
+
+Source `ea7ad9e` passed all 83 unit/SQL tests, clean-install quality/audit, Android/iOS exports and the real backend suite in [CI run 41131212368](https://github.com/asadabbas717/loopnest/actions/runs/41131212368). Dry-run verified only `202610310001_repeat_invitations.sql` pending; that migration was applied to the dedicated hosted test project. No existing invitation was resent and no hosted user/content was created or deleted. The prior iOS banner correction `ec2e17b` also passed [CI run 41130874105](https://github.com/asadabbas717/loopnest/actions/runs/41130874105).
 
 ## Phase 24 — iOS test-banner safe area
 

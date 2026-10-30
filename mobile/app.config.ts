@@ -5,6 +5,7 @@ const config: ExpoConfig = {
   slug: 'loopnest',
   scheme: 'loopnest',
   version: '0.1.0',
+  icon: './assets/brand/icon.png',
   userInterfaceStyle: 'dark',
   backgroundColor: '#080C11',
   orientation: 'portrait',
@@ -17,6 +18,11 @@ const config: ExpoConfig = {
   android: {
     package: 'app.loopnest.mobile',
     softwareKeyboardLayoutMode: 'resize',
+    adaptiveIcon: {
+      foregroundImage: './assets/brand/adaptive-foreground.png',
+      monochromeImage: './assets/brand/adaptive-monochrome.png',
+      backgroundColor: '#080C11',
+    },
     blockedPermissions: [
       'android.permission.RECORD_AUDIO',
       'android.permission.CAMERA',
@@ -32,6 +38,10 @@ const config: ExpoConfig = {
     'expo-system-ui',
     'expo-secure-store',
     'expo-image',
+    [
+      'expo-splash-screen',
+      { image: './assets/brand/mark.png', imageWidth: 180, backgroundColor: '#080C11' },
+    ],
     [
       'expo-image-picker',
       {

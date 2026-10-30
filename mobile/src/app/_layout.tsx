@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
 import { palette } from '../components/theme';
 import { ScrollMemoryProvider } from '../providers/ScrollMemory';
+import { Logo } from '../components/visuals';
 function Navigator() {
   const { session } = useSession();
   const reduced = useReducedMotion();
@@ -50,6 +51,7 @@ function Fonts({ retry }: { retry: () => void }) {
           gap: 20,
         }}
       >
+        <Logo size={88} />
         <Text style={{ color: palette.accent, fontSize: 28, fontWeight: '700' }}>loopnest.</Text>
         {error ? (
           <Pressable accessibilityRole="button" onPress={retry} style={{ padding: 20 }}>
