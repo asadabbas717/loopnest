@@ -1,5 +1,9 @@
-# Reporting vulnerabilities
+# Security reporting
 
-Do not publish tokens, private content, or reproducible attacks against other people's accounts in public issues. Use GitHub's private vulnerability reporting for this repository if the maintainers have enabled it; otherwise contact the repository owner privately through a contact they publish. Private reporting configuration has not been verified here. There is no promised response-time SLA.
+Loopnest is currently a development project; there is no publicly supported production release or security certification.
 
-The fresh `main` implementation is the only development target. The archived Android/Firebase implementation is unsupported. Report affected commit, expected/observed behavior, impact, and a reproduction using accounts and data you control. Do not test against real users.
+Do not post credentials, verification codes, private messages/photos or unsanitized backend logs in public issues. Use GitHub's private vulnerability-reporting option if it is available on this repository. The owner must enable that option or publish an approved private contact before public release; no private reporting route is claimed to be configured by this file.
+
+A useful report describes the affected revision, authorization boundary, synthetic reproduction, expected/actual behavior and impact. Test only accounts/projects you control. Do not access another person's data or exhaust the hosted Free project to demonstrate a finding.
+
+Known boundaries and unfinished release gates are in [security model](docs/SECURITY_MODEL.md), [verification](docs/VERIFICATION.md) and [operations](docs/OPERATIONS.md). Chats are access-controlled and are not end-to-end encrypted. Capture protection cannot prevent an external camera or a compromised recipient device. Please distinguish those disclosed boundaries from a bypass of implemented access controls.

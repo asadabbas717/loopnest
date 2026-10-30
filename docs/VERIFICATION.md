@@ -38,4 +38,6 @@ The dependency audit is a current registry check, not proof of vulnerability abs
 3. Establish moderator/appeal/support procedures, retention and backup/recovery policies, failure monitoring, rollback and distribution/signing ownership.
 4. Recheck dependencies and run an independent security review. Keep email confirmation enabled and test SMTP within the chosen provider's allowance.
 
+Installed-build preparation is in [Android/iOS acceptance](INSTALLED_BUILD_TESTING.md). The remaining owner/operations decisions are explicit in [operations](OPERATIONS.md); workflow files and draft runbooks alone do not close those gates. CAPTCHA is deferred and project-wide write limits do not cover all Auth/request/egress abuse.
+
 The app is in development and is not end-to-end encrypted. Backend access denial at expiry is independent of physical cleanup; provider backups and recipients' copies remain outside live erasure. See [security model](SECURITY_MODEL.md) and [device checklist](PRIVATE_AVATARS_AND_CLEAR_CHAT.md).

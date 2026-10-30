@@ -1,5 +1,9 @@
 # Development status
 
+## Phase 30/31 preparation — installed preview and operations
+
+Prepared a manually started Android arm64 release-mode preview workflow with normal capture protection and public-only backend inputs. It uses the template development signing key and is not store-ready. No Android SDK/JDK is present locally; an iOS installed build needs macOS/Xcode/provisioning. No compiled/phone result is inferred from workflow configuration. Prepared [installed-build checks](INSTALLED_BUILD_TESTING.md), [incident/backup/moderation/rollback runbook](OPERATIONS.md) and [private reporting guidance](../SECURITY.md). Owner-approved contacts, signing, encrypted backup/restore drill, alert destination and independent review remain unresolved; phases 30/31/32 are not marked complete.
+
 ## Phase 29 — content-capacity safeguards; public-abuse work partial
 
 Added private retained/daily ceilings for messages, photo reservations, avatars and app profiles. Aggregate UTC counters survive account/content deletion; cross-account admission is serialized. Safe warnings distinguish storage capacity from daily limits. Operators get aggregate-only telemetry and cannot raise ceilings without a migration. SQL tests cover reset attempts/privileges and CI races two accounts for one remaining slot. See [limits and explicit gaps](PROJECT_CAPACITY.md). CAPTCHA setup is deferred at the owner's request. Auth/request/egress protections remain incomplete; this phase/public release is not complete.

@@ -1,0 +1,60 @@
+name: Android internal preview
+on:
+  workflow_dispatch:
+    inputs:
+      backend_url:
+        description: HTTPS Supabase project URL (public configuration)
+        required: true
+        type: string
+      publishable_key:
+        description: Public sb_publishable_ key ONLY; never a secret or service-role key
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: android-internal-preview
+  cancel-in-progress: true
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      CI: "true"
+      EXPO_NO_TELEMETRY: "1"
+      EXPO_PUBLIC_SUPABASE_URL: ${{ inputs.backend_url }}
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ inputs.publishable_key }}
+      EXPO_PUBLIC_USE_LOCAL_BACKEND: "false"
+      EXPO_PUBLIC_ALLOW_TEST_SCREENSHOTS: "false"
+      NODE_OPTIONS: --max-old-space-size=3072
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci
+      - name: Validate public configuration
+        run: node scripts/check-preview-config.mjs
+      - run: npm run audit:dependencies
+      - run: npm run typecheck
+      - run: npx expo prebuild --platform android --no-install
+      - name: Compile an arm64 release-mode APK using the template development key
+        working-directory: mobile/android
+        run: ./gradlew :app:assembleRelease --no-daemon --max-workers=2 -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
+      - name: Record APK checksum
+        run: sha256sum android/app/build/outputs/apk/release/app-release.apk
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: loopnest-android-internal-preview
+          path: mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 7
