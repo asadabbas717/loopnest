@@ -185,6 +185,26 @@ export function createChatApi(backend: () => SupabaseClient) {
   }
 
   return {
+    async deleteMessage(id: string, messageId: string, actor: string) {
+      const data = await invokePrivate(
+        backend(),
+        'delete-message',
+        actor,
+        {
+          body: { conversation_id: uuid(id), message_id: uuid(messageId), confirmation: 'DELETE' },
+        },
+        'message_delete_unavailable',
+      );
+      if (data?.deleted !== true) throw new UserFacingError('message_delete_unavailable');
+    },
+    async pendingMessageDeletions(id: string, actor: string): Promise<string[]> {
+      const { data, error } = await backend().rpc('pending_message_deletions', {
+        cid: uuid(id),
+        expected_actor: uuid(actor),
+      });
+      if (error) throw error;
+      return data ?? [];
+    },
     async clearChat(id: string, actor: string, requestId: string) {
       const data = await invokePrivate(
         backend(),

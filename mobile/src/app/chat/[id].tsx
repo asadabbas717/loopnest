@@ -16,6 +16,8 @@ import {
   send,
   setRetention,
   clearChat,
+  deleteMessage,
+  pendingMessageDeletions,
   type Conversation,
   type Message,
 } from '../../lib/api';
@@ -77,6 +79,7 @@ export default function Chat() {
       if (!current.has(mid)) messageLayouts.current.delete(mid);
   }, [rows]);
   const [historyReady, setHistoryReady] = useState(false);
+  const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<Photo | null>(null);
   const photoRef = useRef<Photo | null>(null);
@@ -102,16 +105,19 @@ export default function Chat() {
       setHandle(peer?.username ?? '');
     }
     if (!current || current.status !== 'accepted') {
+      setPendingDeletes([]);
       setHistoryReady(false);
       setRows([]);
       return;
     }
+    if (actor) setPendingDeletes(await pendingMessageDeletions(id, actor));
     refreshRef.current?.();
   }, [id, actor]);
   useEffect(() => {
     const listener = AppState.addEventListener('change', (state) => {
       setForeground(state === 'active');
       if (state !== 'active') {
+        setPendingDeletes([]);
         setHistoryReady(false);
         setRows([]);
         setText('');
@@ -148,8 +154,12 @@ export default function Chat() {
           if (active) setHandle(peer?.username ?? '');
           if (active) setPeerAvatar(peer);
           if (current.status === 'accepted') {
-            const history = await messages(id);
+            const [history, pending] = await Promise.all([
+              messages(id),
+              pendingMessageDeletions(id, actor),
+            ]);
             if (active) {
+              setPendingDeletes(pending);
               setRows(history);
               setHistoryReady(true);
             }
@@ -168,6 +178,7 @@ export default function Chat() {
         });
       return () => {
         active = false;
+        setPendingDeletes([]);
         setHistoryReady(false);
         setRows([]);
         setChat(null);
@@ -258,6 +269,20 @@ export default function Chat() {
       void backend().removeChannel(channel);
     };
   }, [id, actor, chat?.status, foreground, connectionRevision]);
+  const removeMessage = (mid: string) =>
+    run(async () => {
+      if (!actor) return;
+      try {
+        await deleteMessage(id, mid, actor);
+        setRows((current) => current.filter((m) => m.id !== mid));
+        setPendingDeletes((current) => current.filter((existing) => existing !== mid));
+        await reload();
+      } catch (issue) {
+        setPendingDeletes((current) => (current.includes(mid) ? current : [...current, mid]));
+        refreshRef.current?.();
+        throw issue;
+      }
+    });
   if (!session || !validProfile)
     return (
       <Page scrollReady={false} startAtEnd>
@@ -398,6 +423,23 @@ export default function Chat() {
         </Text>
       )}
       <Notice text={loadError || error} />
+      {chat?.status === 'accepted' && pendingDeletes.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.copy}>
+            A deletion needs to finish. Its content is hidden once the server accepts deletion;
+            retry to finish removing stored photos.
+          </Text>
+          {pendingDeletes.map((mid, index) => (
+            <Button
+              key={mid}
+              title={`Retry deletion${pendingDeletes.length > 1 ? ` ${index + 1}` : ''}`}
+              secondary
+              disabled={busy}
+              onPress={() => removeMessage(mid)}
+            />
+          ))}
+        </View>
+      )}
       {!chat && <Text style={styles.copy}>This conversation is unavailable.</Text>}
       {chat?.status === 'pending' && (
         <View style={styles.card}>
@@ -490,6 +532,37 @@ export default function Chat() {
                   <Text style={{ fontFamily: fonts.mono, color: palette.muted, fontSize: 10 }}>
                     {message.sender_id === actor ? 'YOU' : name.toUpperCase()}
                   </Text>
+                  {message.sender_id === actor && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete message for both people"
+                      disabled={busy}
+                      style={{
+                        minWidth: 40,
+                        minHeight: 36,
+                        alignItems: 'flex-end',
+                        justifyContent: 'center',
+                      }}
+                      onPress={() =>
+                        Alert.alert(
+                          'Delete this message for both people?',
+                          message.photo_id || message.view_once
+                            ? 'Deletes this message, its caption and attached photo from both accounts. Already delivered or saved copies cannot be recalled.'
+                            : 'Deletes this message from both accounts. Already delivered or saved copies cannot be recalled.',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                              text: 'Delete for both',
+                              style: 'destructive',
+                              onPress: () => removeMessage(message.id),
+                            },
+                          ],
+                        )
+                      }
+                    >
+                      <Icon name="trash-2" size={14} />
+                    </Pressable>
+                  )}
                   {message.sender_id !== actor && (
                     <Pressable
                       accessibilityRole="button"

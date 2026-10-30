@@ -22,4 +22,6 @@ export const {
   blockUser,
   setRetention,
   clearChat,
+  deleteMessage,
+  pendingMessageDeletions,
 } = createChatApi(backend);

@@ -1,5 +1,9 @@
 # Development status
 
+## Additional feature — individual message/photo deletion
+
+Added confirmed sender-only Delete for both, including captions and regular/one-time attachments. Durable pending jobs revoke just the selected content, with physical Storage deletion before final metadata removal and visible, recoverable retries. History, moderation and receipt reads exclude pending deletions. Existing quota/retry tombstones prevent near-term resend resurrection and quota resets. No new dependency or native permission was added. See [behavior and device acceptance](INDIVIDUAL_DELETION.md). Deployment follows complete automated verification.
+
 ### Owner acceptance — 31 October
 
 The owner confirms read receipts work correctly with sharing enabled and disabled on both phones, and the iOS development banner is aligned as intended. This completes the reported toggle/banner retests. Do not infer signed-build, native-launcher/splash, capture-with-test-mode-disabled or every individual visibility/network scenario from this general confirmation.

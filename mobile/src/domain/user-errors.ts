@@ -1,5 +1,9 @@
 // Only approved messages reach the UI; never render arbitrary server diagnostics.
 export const errorMessages = {
+  message_delete_invalid: 'Reopen the conversation and confirm deletion of this message again.',
+  message_delete_forbidden: 'Only your own messages in an available conversation can be deleted.',
+  message_delete_unavailable:
+    'Deletion could not finish. Use Retry deletion to finish removing this message and its photo.',
   clear_unavailable:
     'Chat clearing is pending or unavailable. Retry Clear chat to finish removing its photos and messages.',
   avatar_unavailable:

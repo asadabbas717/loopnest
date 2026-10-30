@@ -14,6 +14,7 @@ Loopnest is in active development. Chats are **access-controlled, not end-to-end
 - Disappearing messages: whole-hour durations from one hour to thirty days; changes affect new messages.
 - Friends, bilateral blocking/unblocking and private profile pictures with first-name initial fallbacks.
 - Confirmed **Clear chat for both people**, preserving the connection and retention setting.
+- Confirmed sender-only [individual message/photo deletion](docs/INDIVIDUAL_DELETION.md), with recoverable photo cleanup.
 - Password-verified account deletion, scoped abuse reporting and moderator review.
 - Native capture prevention, inactive-screen protection and a development-only UI capture opt-in.
 - An original Loopnest logo, platform launcher icons and branded launch configuration; [branding](docs/BRANDING.md).

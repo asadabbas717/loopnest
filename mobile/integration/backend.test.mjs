@@ -778,6 +778,38 @@ test(
           laterReport = await reporter.report(text.id, 'spam');
         },
       );
+      await t.test(
+        'individual deletion removes real photo bytes and text, rejects peer deletion and prevents resend resurrection',
+        async () => {
+          const assetId = await validatedAsset(alice);
+          const asset = await admin.from('photo_assets').select('path').eq('id', assetId).single();
+          ok(asset.error, 'individual deletion fixture path');
+          const mid = randomUUID();
+          await alice.api.send(cid, mid, 'delete this photo', alice.id, assetId);
+          await assert.rejects(bob.api.deleteMessage(cid, mid, bob.id));
+          await assert.rejects(eve.api.deleteMessage(cid, mid, eve.id));
+          await alice.api.deleteMessage(cid, mid, alice.id);
+          assert.ok(
+            (await admin.storage.from('chat-photos').download(asset.data.path)).error,
+            'physical bytes removed',
+          );
+          assert.equal(
+            (await bob.api.messages(cid)).some((row) => row.id === mid),
+            false,
+          );
+          await assert.rejects(alice.api.send(cid, mid, 'delete this photo', alice.id, assetId));
+          await alice.api.deleteMessage(cid, mid, alice.id);
+          assert.deepEqual(await alice.api.pendingMessageDeletions(cid, alice.id), []);
+          const textId = randomUUID();
+          await alice.api.send(cid, textId, 'delete this text', alice.id);
+          await alice.api.deleteMessage(cid, textId, alice.id);
+          assert.equal(
+            (await bob.api.messages(cid)).some((row) => row.id === textId),
+            false,
+          );
+          await bob.api.send(cid, randomUUID(), 'conversation remains usable', bob.id);
+        },
+      );
       await t.test('blocking revokes API access and prevents new messages/photos', async () => {
         await bob.api.blockUser(bob.id, alice.id);
         assert.equal((await alice.api.messages(cid)).length, 0);
