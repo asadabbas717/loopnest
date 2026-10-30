@@ -1,5 +1,11 @@
 # Development status
 
+### Owner acceptance — 31 October
+
+The owner confirms read receipts work correctly with sharing enabled and disabled on both phones, and the iOS development banner is aligned as intended. This completes the reported toggle/banner retests. Do not infer signed-build, native-launcher/splash, capture-with-test-mode-disabled or every individual visibility/network scenario from this general confirmation.
+
+Remaining public-release work is grouped into five proposed phases: 28 automated monitored physical cleanup; 29 aggregate abuse and Free-quota controls; 30 installed-build/device/accessibility/performance and normal capture acceptance; 31 operational/privacy/support/moderation/backup/rollback readiness; 32 independent security review and final release preparation. These are planning groups, not a guarantee against additional fixes revealed by testing.
+
 ## Phase 27 — delivery acknowledgements and optional read sharing
 
 Added Sent/Delivered/Seen indicators with private recipient-bound acknowledgements, bounded foreground catch-up and Realtime status refresh. Read sharing starts off; Seen requires mutual opt-in and a visible message footer in the focused, settled chat. Loading, restoration, dragging, keyboards and blurred routes cannot produce visibility acknowledgements. Disabling sharing hides earlier Seen states. No online/last-seen tracking, exact activity timestamps, background delivery service or new dependency was added. One-time message visibility does not claim photo opening. See [semantics, privacy and device acceptance](MESSAGE_RECEIPTS.md). Hosted rollout follows passing real-backend CI.
