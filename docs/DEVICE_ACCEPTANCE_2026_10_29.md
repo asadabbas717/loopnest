@@ -2,6 +2,8 @@
 
 These are owner-reported physical-device results, not results inferred from automated tests.
 
+**31 October follow-up:** the owner reports all follow-up tests passed except the development capture banner overlapping the iOS status bar. Phase 24 corrects that separate safe-area issue. The checklist below preserves the original retest scope; new branding and receipt indicators have separate acceptance in [branding](BRANDING.md) and [receipts](MESSAGE_RECEIPTS.md).
+
 ## Passed on both phones
 
 - Sign-in, email autofill, password visibility and accurate wrong-credential warnings.

@@ -21,6 +21,7 @@ export function ReceiptProvider({ children }: PropsWithChildren) {
   const enabled = profile?.read_receipts === true;
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const marker = useRef<((ids: string[]) => void) | null>(null);
+  const generation = useRef(0);
   const mark = useCallback((ids: string[]) => marker.current?.(ids), []);
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => setForeground(s === 'active'));
@@ -72,7 +73,7 @@ export function ReceiptProvider({ children }: PropsWithChildren) {
     };
     marker.current = receive;
     const channel = client
-      .channel(`receipts-${actor}`, {
+      .channel(`receipts-${actor}-${++generation.current}`, {
         config: { postgres_changes_options: { wait: true, timeout: 15000 } },
       })
       .on(

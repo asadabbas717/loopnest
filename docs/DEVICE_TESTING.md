@@ -1,6 +1,6 @@
 # Device testing and connection troubleshooting
 
-Use disposable accounts and synthetic photos. The owner tested the latest UI on Android and iOS; profile pictures, clearing, photos and account privacy passed. Phase 23 keyboard/scroll fixes still need a focused retest; actual one-hour expiry remains unobserved. See [device results](DEVICE_ACCEPTANCE_2026_10_29.md). Exact evidence is in [STATUS.md](STATUS.md).
+Use disposable accounts and synthetic photos. The owner reports the phase 23 keyboard/scroll retests passed on Android and iOS, except the iOS development banner overlap corrected in phase 24. The banner and new [delivery/read receipts](MESSAGE_RECEIPTS.md) need device acceptance. See [earlier device results](DEVICE_ACCEPTANCE_2026_10_29.md) and [current status](STATUS.md).
 
 ## Start and stop
 
