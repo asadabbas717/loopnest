@@ -1,5 +1,9 @@
 # Development status
 
+## APK blocker repair — 1 November 2026
+
+Updated glob to the patched 14.0.2 and modern matcher consumers to minimatch 11.0.1. Legacy lint consumers receive a documented export/test adapter backed by that same unmodified upstream matcher. A clean install reports zero advisories and a valid dependency tree; strict typing, lint, formatting and all 95 tests pass. Native/CI acceptance follows the new build. The Android workflow now also builds when its own file changes on main, using public test-project configuration; no privileged credential is included and normal capture protection remains enabled.
+
 ## Hosted maintenance activation — 1 November 2026
 
 Installed the scheduler functions and enabled `17 */6 * * *` (UTC) on the dedicated Free test project. Corrected hosted installation to pass both `--linked` and the explicit project reference; the CLI requires that combination. The authenticated count-only verification passed before activation. The first bounded worker run succeeded: three expired text messages removed, zero photo/avatar/individual-deletion jobs removed, zero failures and an empty backlog afterward. Health reports enabled scheduling and a successful worker run; a future cron-triggered hosted dispatch has not yet been observed. No local Docker or Expo server was started.

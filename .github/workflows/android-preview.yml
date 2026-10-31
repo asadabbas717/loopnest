@@ -1,5 +1,8 @@
 name: Android internal preview
 on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/android-preview.yml]
   workflow_dispatch:
     inputs:
       backend_url:
@@ -25,8 +28,10 @@ jobs:
     env:
       CI: "true"
       EXPO_NO_TELEMETRY: "1"
-      EXPO_PUBLIC_SUPABASE_URL: ${{ inputs.backend_url }}
-      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ inputs.publishable_key }}
+      # Public client configuration, embedded in every preview APK. Authorization
+      # is enforced by Supabase policies; never substitute privileged keys here.
+      EXPO_PUBLIC_SUPABASE_URL: ${{ inputs.backend_url || 'https://wqwbfgcyipfzetdgqjip.supabase.co' }}
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ inputs.publishable_key || 'sb_publishable_9lYTGat0nYHAECJ-PG7_mA_KZ3BITSB' }}
       EXPO_PUBLIC_USE_LOCAL_BACKEND: "false"
       EXPO_PUBLIC_ALLOW_TEST_SCREENSHOTS: "false"
       NODE_OPTIONS: --max-old-space-size=3072
@@ -46,6 +51,8 @@ jobs:
         run: node scripts/check-preview-config.mjs
       - run: npm run audit:dependencies
       - run: npm run typecheck
+      - run: npm run lint
+      - run: node --test tests/glob-tooling.test.mjs
       - run: npx expo prebuild --platform android --no-install
       - name: Compile an arm64 release-mode APK using the template development key
         working-directory: mobile/android

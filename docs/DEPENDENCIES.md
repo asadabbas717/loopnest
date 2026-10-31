@@ -1,8 +1,8 @@
-# Current build blocker — 1 November 2026
+# Build-tool security repair — 1 November 2026
 
 The clean Android preview audit and a fresh local audit report **25 moderate findings** propagated from two reviewed advisories: [glob cancellation bypass](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) (patched in 14.0.2) and [minimatch pattern amplification](https://github.com/advisories/GHSA-g3hv-75wg-m249) (patched in 11.0.1). Installed dependencies include glob 13.0.6 and minimatch 3.1.5/10.2.6. These are tooling dependencies, but the configured audit gate still applies.
 
-The audit's suggested forced Expo downgrade to SDK 51 is not a compatible SDK 58 repair. A blanket minimatch 11 replacement also changes the legacy callable CommonJS API used by lint tooling. No forced downgrade, unverified cross-major override, advisory suppression or audit-threshold relaxation was applied. A reviewed compatible dependency update/backport and full clean-install checks are required before retrying the installed build. Earlier zero-advisory counts below are historical snapshots.
+Repaired with glob 14.0.2 and explicitly scoped modern minimatch 11.0.1 dependencies. A small [original compatibility adapter](../mobile/vendor/minimatch-legacy/README.md) preserves legacy lint consumers' callable export and the import plugin's `makeRe(...).test(path)` contract using the patched upstream matcher. It includes no old parser or generated-regex implementation. Clean installation, a valid dependency tree, all 95 tests, typing/linting and formatting pass; audit reports zero advisories again. Tests cover actual lint-rule enforcement, path matching/ignores, bounded hostile expansion and pre-aborted traversal. CI/native compilation remain separate checks. No forced framework downgrade or audit relaxation was used. Earlier counts below are historical snapshots.
 
 # Dependency review — October 21, 2026
 

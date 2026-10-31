@@ -1,0 +1,11 @@
+{
+  "name": "@loopnest/minimatch-legacy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Callable CommonJS export adapter for the patched upstream minimatch implementation",
+  "license": "MIT",
+  "main": "index.cjs",
+  "dependencies": {
+    "minimatch-modern": "npm:minimatch@11.0.1"
+  }
+}

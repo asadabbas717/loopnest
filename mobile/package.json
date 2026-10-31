@@ -72,7 +72,8 @@
     "jpeg-js": "0.4.4",
     "prettier": "^3.9.9",
     "supabase": "2.121.0",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "minimatch": "file:vendor/minimatch-legacy"
   },
   "overrides": {
     "@expo/cli": {
@@ -80,6 +81,17 @@
     },
     "@expo/config": {
       "deepmerge": "$deepmerge"
+    },
+    "minimatch": "$minimatch",
+    "@expo/fingerprint": {
+      "minimatch": "11.0.1"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.1"
+    },
+    "glob": {
+      ".": "14.0.2",
+      "minimatch": "11.0.1"
     }
   }
 }
