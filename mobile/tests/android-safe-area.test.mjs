@@ -7,9 +7,13 @@ const xml = (bottom, dock = '') =>
 const bar = (top, visible = true) =>
   `InsetsSource: mType=navigationBars mFrame=[0,${top}][1080,1920] mVisible=${visible}`;
 test('native geometry check rejects system-bar and dock overlap rather than accepting process survival alone', () => {
+  const deviceDump =
+    'InsetsSource id=98c50001 type=navigationBars frame=[0,1794][1080,1920] visible=true flags=INSETS_ROUNDED_CORNER sideHint=BOTTOM';
+  assert.equal(checkAndroidSafeArea(xml(1794), deviceDump).navigationTop, 1794);
   assert.equal(checkAndroidSafeArea(xml(1794), bar(1794)).navigationTop, 1794);
   assert.equal(checkAndroidSafeArea(xml(1854), bar(1854)).pageBottom, 1854);
   assert.throws(() => checkAndroidSafeArea(xml(1920), bar(1794)), /overlaps/);
+  assert.throws(() => checkAndroidSafeArea(xml(1920), deviceDump), /overlaps/);
   assert.throws(() => checkAndroidSafeArea(xml(1794), bar(1794, false)), /unavailable/);
   assert.throws(() => checkAndroidSafeArea('<hierarchy/>', bar(1794)), /unavailable/);
   assert.throws(

@@ -6,6 +6,9 @@ on:
     paths:
       - .github/workflows/expo-preview-launch.yml
       - mobile/eas-preview-artifact.json
+      - mobile/scripts/check-android-launch.mjs
+      - mobile/scripts/android-safe-area.mjs
+      - mobile/scripts/fetch-eas-preview.mjs
 permissions:
   contents: read
 concurrency:

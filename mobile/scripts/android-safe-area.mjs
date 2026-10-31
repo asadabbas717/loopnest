@@ -12,7 +12,7 @@ export function checkAndroidSafeArea(xml, displays) {
   const page = bounds(node(xml, 'safe-page-content'));
   const bars = [
     ...displays.matchAll(
-      /mType=navigationBars\b[^\n]*?mFrame=\[(\d+),(\d+)\]\[(\d+),(\d+)\][^\n]*?mVisible=(true|false)/g,
+      /(?:mType|type)=navigationBars\b[^\n]*?(?:mFrame|frame)=\[(\d+),(\d+)\]\[(\d+),(\d+)\][^\n]*?(?:mVisible|visible)=(true|false)/g,
     ),
   ]
     .filter((match) => match[5] === 'true')
