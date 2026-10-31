@@ -23,7 +23,7 @@ The mobile app contains no service-role key, advertising or analytics SDK. Media
 
 ## Start on your phone
 
-For an installed Android app, see the [current Expo preview](docs/EXPO_PREVIEW.md) and [installed-build checks](docs/INSTALLED_BUILD_TESTING.md). Version 0.1.2/build 3 contains the safe-area fix and SDK patch alignment. Its submitted build is awaiting completion/device acceptance; the earlier 0.1.1 launches but has the reported dock overlap. The 0.1.0 startup-crashing APK is superseded. Internal previews use a public development signing key, not production signing.
+For an installed Android app, see the [current Expo preview](docs/EXPO_PREVIEW.md) and [installed-build checks](docs/INSTALLED_BUILD_TESTING.md). Version 0.1.2/build 3 contains the safe-area fix and SDK patch alignment. Its Expo build and Android 15 release-launch/shared-safe-area checks pass; signed-in device acceptance is pending; the earlier 0.1.1 launches but has the reported dock overlap. The 0.1.0 startup-crashing APK is superseded. Internal previews use a public development signing key, not production signing.
 
 Use Node 24 (the CI version), npm and Expo Go compatible with SDK 58. Hosted testing requires an isolated Supabase Free project; Docker is needed only for the optional local backend.
 

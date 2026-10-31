@@ -23,7 +23,7 @@ Security regressions cover outsider/anonymous denial, account binding, accepted/
 
 ## Current evidence and limits
 
-The current app source is 0.1.2/build 3 with the bottom/side safe-area correction and aligned SDK patches. Source `f5a651d` passes [CI 41248588895](https://github.com/asadabbas717/loopnest/actions/runs/41248588895), including Expo Doctor and backend integration. The submitted APK's completion and installed geometry have not been rechecked; use [current Expo build information](EXPO_PREVIEW.md). The earlier 0.1.1 binary's launch evidence below must not be treated as 0.1.2 acceptance.
+The current app source is 0.1.2/build 3 with the bottom/side safe-area correction and aligned SDK patches. Source `f5a651d` passes [CI 41248588895](https://github.com/asadabbas717/loopnest/actions/runs/41248588895), including Expo Doctor and backend integration. The exact Expo-built APK passes Android 15 cold launches and shared content-container bounds in three-button and gesture modes in [run 41250626835](https://github.com/asadabbas717/loopnest/actions/runs/41250626835). The probe uses signed-out UI and does not establish signed-in dock/device acceptance; use [current Expo build information](EXPO_PREVIEW.md). The earlier 0.1.1 binary's launch evidence below must not be treated as 0.1.2 acceptance.
 
 - Earlier SDK 58 Expo Go acceptance passed on both owner phones for core sign-in, messaging, network recovery, photos, keyboard/autofill, account switching and native capture protection.
 - The earlier Expo Go connection incident was resolved by opening the running LAN URL. Later installed APK startup failures are separately recorded below.

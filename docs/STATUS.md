@@ -3,13 +3,19 @@
 ## Current snapshot — repository sync, 1 November 2026
 
 - App configuration: **0.1.2 / Android build 3**, Expo 58.0.22, Router 58.0.29, React Native 0.88.1 and Screens 4.30.1.
-- Submitted APK source: `f5a651d`, [current Expo build 56efd37c](https://expo.dev/accounts/asadabbasbusiness/projects/loopnest/builds/56efd37c-0e1e-4517-afe9-98cf9bfea55e). The earlier 0.1.2 build was canceled. Expo completion is confirmed: Doctor 20/20 and native BUILD SUCCESSFUL. Exact-artifact emulator verification is in progress; owner-device geometry is pending.
+- Submitted APK source: `f5a651d`, [current Expo build 56efd37c](https://expo.dev/accounts/asadabbasbusiness/projects/loopnest/builds/56efd37c-0e1e-4517-afe9-98cf9bfea55e). The earlier 0.1.2 build was canceled. Expo completion is confirmed: Doctor 20/20 and native BUILD SUCCESSFUL. The exact APK passes Android 15 cold-launch and safe-content geometry checks in both three-button and gesture modes; owner-device dock acceptance is pending.
 - [Source CI 41248588895](https://github.com/asadabbas717/loopnest/actions/runs/41248588895) passes. Local Doctor passes 20/20; all 96 tests, typing/lint/formatting, clean audit and Android/iOS exports pass. Backend integration passed in CI.
-- The owner confirms 0.1.1 opens on Android. Its dock overlaps the three-button bar; the shared-container/clearance fix is included in 0.1.2 and needs device acceptance. The fixture now pins the downloaded 0.1.2 candidate, verified against its Expo source and SHA-256; runtime checks are in progress.
+- The owner confirms 0.1.1 opens on Android. Its dock overlaps the three-button bar; the shared-container/clearance fix is included in 0.1.2 and needs device acceptance. The fixture now pins the downloaded 0.1.2 candidate, verified against its Expo source and SHA-256; runtime checks pass in [run 41250626835](https://github.com/asadabbas717/loopnest/actions/runs/41250626835).
 - Hosted cleanup is configured every six hours; its first bounded worker run passed. Future hosted cron execution and external alert delivery are not established by that initial run. Project content ceilings are deployed; CAPTCHA and broader Auth/request/egress protections remain incomplete.
 - Public-release gates include latest installed Android/iOS/privacy/accessibility acceptance, owner-controlled production signing, operational contacts/alerting/backup restore, remaining abuse protection and independent review. Voice notes remain omitted.
 
 The entries below are chronological work snapshots. Statements such as “pending,” “manual only” or older dependency counts describe their recorded phase; use this current snapshot and the linked guides for today's state.
+
+## Completed Expo 0.1.2 review — 1 November 2026
+
+Downloaded the finished source `f5a651d` APK and verified its 100,835,206-byte file, SHA-256 `8bd091e8c45cc186dda16852957838a24070e0e881356208f1ffa9421377eafd`, Doctor 20/20 and native build success. The exact APK passes [run 41250626835](https://github.com/asadabbas717/loopnest/actions/runs/41250626835) on Android 15/x86_64 with three-button and gesture navigation: required permission granted, five broad permissions absent, signed-out UI rendered and process survival on both cold launches. Shared content bottom equals navigation-bar top in both modes (1794 and 1857 pixels respectively). The signed-in dock is absent in this probe; owner-device dock/keyboard/larger-text/capture acceptance remains pending.
+
+The first geometry probe encountered an Android dump-format difference (`type/frame/visible` instead of prefixed field names); the parser and regression were corrected without changing or rebuilding the APK. [CI 41250626874](https://github.com/asadabbas717/loopnest/actions/runs/41250626874) passes the full quality and backend jobs. The added geometry regression brings the unit/SQL test count to 97. Fixture metadata now pins 0.1.2. No PR was merged and no hosted backend content was changed by this review.
 
 ## Expo Doctor patch alignment — 1 November 2026
 
