@@ -3,8 +3,10 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'Loopnest',
   slug: 'loopnest',
+  owner: 'asadabbasbusiness',
+  extra: { eas: { projectId: '43623fa3-850e-4e8a-9413-92a6088354d2' } },
   scheme: 'loopnest',
-  version: '0.1.0',
+  version: '0.1.1',
   icon: './assets/brand/icon.png',
   userInterfaceStyle: 'dark',
   backgroundColor: '#080C11',
@@ -16,6 +18,7 @@ const config: ExpoConfig = {
     infoPlist: { NSAppTransportSecurity: { NSAllowsLocalNetworking: true } },
   },
   android: {
+    versionCode: 2,
     package: 'app.loopnest.mobile',
     softwareKeyboardLayoutMode: 'resize',
     adaptiveIcon: {
@@ -24,11 +27,13 @@ const config: ExpoConfig = {
       backgroundColor: '#080C11',
     },
     blockedPermissions: [
+      // DETECT_SCREEN_CAPTURE is deliberately retained: SDK 58 registers its
+      // activity callback at module creation on Android 14+. FLAG_SECURE still
+      // prevents capture; this normal permission grants no screenshot pixels.
       'android.permission.RECORD_AUDIO',
       'android.permission.CAMERA',
       'android.permission.READ_EXTERNAL_STORAGE',
       'android.permission.READ_MEDIA_IMAGES',
-      'android.permission.DETECT_SCREEN_CAPTURE',
       'android.permission.WRITE_EXTERNAL_STORAGE',
     ],
   },

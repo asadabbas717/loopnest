@@ -1,0 +1,19 @@
+# EAS archives originate at the Git root. Upload only source and public config.
+**/node_modules/
+**/.expo/
+**/dist/
+**/coverage/
+mobile/android/
+mobile/ios/
+build-artifacts/
+**/.env
+**/.env.*
+!**/.env.example
+**/credentials.json
+**/*.pem
+**/*.key
+**/*.keystore
+**/*.jks
+supabase/.temp/
+supabase/.branches/
+.git/

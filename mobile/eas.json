@@ -1,0 +1,21 @@
+{
+  "cli": { "appVersionSource": "local" },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "environment": "preview",
+      "node": "24.13.0",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://wqwbfgcyipfzetdgqjip.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_9lYTGat0nYHAECJ-PG7_mA_KZ3BITSB",
+        "EXPO_PUBLIC_USE_LOCAL_BACKEND": "false",
+        "EXPO_PUBLIC_ALLOW_TEST_SCREENSHOTS": "false"
+      },
+      "android": {
+        "buildType": "apk",
+        "resourceClass": "medium",
+        "withoutCredentials": true
+      }
+    }
+  }
+}
