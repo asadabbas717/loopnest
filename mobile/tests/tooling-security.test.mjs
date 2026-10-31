@@ -13,9 +13,13 @@ const cliRoot = dirname(expoRequire.resolve('@expo/cli/package.json'));
 const cliRequire = createRequire(join(cliRoot, 'package.json'));
 const cliModule = (name) => require(join(cliRoot, 'build/src/start/server', name));
 
-test('Expo plugin schemas and command arguments retain validation with scoped Zod 4', () => {
-  const { PluginSchema, DevToolsPluginOutputSchema } = cliModule('DevToolsPlugin.schema.js');
-  const { createMCPDevToolsExtensionSchema } = cliModule('createMCPDevToolsExtensionSchema.js');
+test('Expo JSON plugin schemas and MCP command arguments retain validation after CLI updates', () => {
+  const { PluginSchema, DevToolsPluginOutputSchema } = cliModule(
+    'devtools/DevToolsPlugin.schema.js',
+  );
+  const { validate, ValidationError } = cliRequire('@expo/schema-utils');
+  const { z } = cliRequire('zod');
+  const { createMCPDevToolsExtensionSchema } = cliModule('mcp/createMCPDevToolsExtensionSchema.js');
   const plugin = {
     packageName: 'synthetic-plugin',
     packageRoot: '/synthetic-plugin',
@@ -36,13 +40,16 @@ test('Expo plugin schemas and command arguments retain validation with scoped Zo
       ],
     },
   };
-  assert.equal(PluginSchema.safeParse(plugin).success, true);
-  assert.equal(
-    PluginSchema.safeParse({ ...plugin, cliExtensions: { ...plugin.cliExtensions, commands: [] } })
-      .success,
-    false,
+  assert.doesNotThrow(() => validate(PluginSchema, plugin));
+  assert.throws(
+    () =>
+      validate(PluginSchema, {
+        ...plugin,
+        cliExtensions: { ...plugin.cliExtensions, commands: [] },
+      }),
+    ValidationError,
   );
-  const schema = createMCPDevToolsExtensionSchema(plugin);
+  const schema = createMCPDevToolsExtensionSchema(plugin, z);
   assert.equal(
     schema.safeParse({ command: 'check', count: 2, confirm: true, text: 'hello' }).success,
     true,
@@ -54,17 +61,19 @@ test('Expo plugin schemas and command arguments retain validation with scoped Zo
     { command: 'check', unexpected: true },
   ])
     assert.equal(schema.safeParse(invalid).success, false);
-  assert.equal(
-    DevToolsPluginOutputSchema.safeParse([
+  assert.doesNotThrow(() =>
+    validate(DevToolsPluginOutputSchema, [
       { type: 'text', text: 'ok', level: 'info' },
       { type: 'image', url: 'https://example.invalid/image' },
-    ]).success,
-    true,
+    ]),
   );
-  const invalid = DevToolsPluginOutputSchema.safeParse([{ type: 'image', url: 'invalid URL' }]);
-  assert.equal(invalid.success, false);
-  assert.ok(invalid.error.issues.length);
-  const { DevToolsPluginCliExtensionResults } = cliModule('DevToolsPluginCliExtensionResults.js');
+  assert.throws(
+    () => validate(DevToolsPluginOutputSchema, [{ type: 'image', url: 'invalid URL' }]),
+    ValidationError,
+  );
+  const { DevToolsPluginCliExtensionResults } = cliModule(
+    'devtools/DevToolsPluginCliExtensionResults.js',
+  );
   const output = new DevToolsPluginCliExtensionResults();
   output.append(JSON.stringify([{ type: 'text', text: 'ok', level: 'info' }]));
   output.append(JSON.stringify([{ type: 'image', url: 'invalid URL' }]));

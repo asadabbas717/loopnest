@@ -1,5 +1,7 @@
 # Dependency security fixes — October 28, 2026
 
+Update, 1 November: SDK 58 patch alignment installs Expo 58.0.22, Router 58.0.29 and Screens 4.30.1. Expo CLI 58.1.18 now uses JSON schemas for plugin/output validation and injects Zod when constructing MCP command schemas. The current regressions follow those relocated APIs and still verify valid/invalid plugin data, typed strict command arguments and safe output-error handling. The Zod override and bounded-array security check remain; the earlier description below records the original CLI behavior. See [current verification](STATUS.md).
+
 The earlier five high affected-package entries represented two underlying findings, propagated through Expo's CLI/signing dependencies. A fresh audit also picked up the separate deepmerge advisory updated on October 27. This work addresses the underlying code paths; no audit exclusions, vulnerability allowlist, framework downgrade or legacy-peer/force install flag is used.
 
 ## Forge

@@ -1,5 +1,13 @@
 # Development status
 
+## Expo Doctor patch alignment — 1 November 2026
+
+The owner reported a Doctor failure on the first 0.1.2 build. Its log showed 19/20 checks, with only newer SDK 58 patch recommendations: Expo 58.0.22, Router 58.0.29 and Screens 4.30.1. The build itself remained in progress; the warning had not stopped native compilation. Canceled that superseded build and installed the three compatible patches through Expo's installer. Fresh Doctor passes 20/20, audit reports zero advisories and the installed dependency tree is valid. No validation exclusions or warning suppression were added. CI now explicitly runs Expo Doctor.
+
+The updated CLI 58.1.18 moved plugin validators to its devtools directory and uses JSON schemas; MCP command-schema creation now accepts an injected Zod instance. Updated the security regression to exercise those actual APIs, preserving invalid-plugin/output/argument rejection and result error handling. The existing scoped security overrides remain. The 0.1.2 shared safe-area fix, required Android callback permission and normal capture protection are retained.
+
+Strict typing, lint, all 96 tests and fresh Android/iOS Hermes exports pass after alignment. The replacement Expo build must still complete native compilation and device acceptance; a local Doctor pass is not an installed-app result.
+
 ## Android bottom navigation spacing — 1 November 2026
 
 The owner confirms the Expo APK opens and supplied a signed-in Home photo showing the dock behind Android's three-button navigation bar. The shared Page now places its interactive content and floating dock inside a flex container within SafeAreaView's padded content area. This anchors absolute positioning above the bottom/side system insets instead of ignoring the parent's safe-area padding. The fix applies to Chats, Friends and You and keeps the header/scroll area within the same safe bounds. Scroll content reserves at least the measured dock height plus its gap, so larger labels do not cover the last items. Reviewed shared Page use across chat, photo, reporting, moderation and account screens; other absolute shapes are noninteractive background decoration.
