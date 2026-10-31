@@ -15,6 +15,18 @@ const pkg = 'app.loopnest.mobile';
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 try {
   run('install', '-r', resolve('android/app/build/outputs/apk/release/app-release.apk'));
+  const permissions = run('shell', 'dumpsys', 'package', pkg);
+  if (!/android\.permission\.DETECT_SCREEN_CAPTURE: granted=true/.test(permissions))
+    throw new Error('Installed APK lacks the screen-capture callback permission grant.');
+  for (const name of [
+    'CAMERA',
+    'RECORD_AUDIO',
+    'READ_MEDIA_IMAGES',
+    'READ_EXTERNAL_STORAGE',
+    'WRITE_EXTERNAL_STORAGE',
+  ])
+    if (permissions.includes(`android.permission.${name}`))
+      throw new Error(`Unexpected broad permission in installed APK: ${name}`);
   for (let launch = 0; launch < 2; launch++) {
     run('shell', 'am', 'force-stop', pkg);
     run('logcat', '-c');
