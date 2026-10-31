@@ -1,5 +1,7 @@
 # Expo EAS internal APK
 
+The 0.1.1/build 2 [Expo APK](https://expo.dev/artifacts/eas/5gOgLbyGvGx5BqVvuU_C0RX0QQjZC1KY3P8ptxZ32EQ.apk) is built and passes the [exact-artifact Android 15 release launch probe](https://github.com/asadabbas717/loopnest/actions/runs/41244990989). It replaces the crashing 0.1.0 APK. Owner-device acceptance is pending; see [installed testing](INSTALLED_BUILD_TESTING.md) for its checksum and limits.
+
 The owner requested an Expo-hosted alternative to the GitHub build. The project is linked to `@asadabbasbusiness/loopnest`. From `mobile`, use the signed-in EAS CLI:
 
 ```bash
