@@ -67,7 +67,7 @@
     "@types/node": "^26.6.4",
     "@types/react": "~19.3.0",
     "deepmerge": "file:vendor/deepmerge",
-    "eslint": "^9.39.5",
+    "eslint": "^10.13.0",
     "eslint-config-expo": "~58.0.4",
     "jpeg-js": "0.4.4",
     "prettier": "^3.9.9",
