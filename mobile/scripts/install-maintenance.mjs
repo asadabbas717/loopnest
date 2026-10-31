@@ -15,7 +15,7 @@ try {
     new URL('../../supabase/operations/install-maintenance.sql', import.meta.url),
   );
   if (target[0] === '--local') await localSQL(readFileSync(file, 'utf8'));
-  else await localCli(['db', 'query', ...target, '--file', file]);
+  else await localCli(['db', 'query', '--linked', ...target, '--file', file]);
   console.log('Maintenance scheduler functions installed; no schedule or token was enabled.');
 } catch (issue) {
   console.error(

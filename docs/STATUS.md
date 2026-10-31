@@ -1,5 +1,13 @@
 # Development status
 
+## Hosted maintenance activation — 1 November 2026
+
+Installed the scheduler functions and enabled `17 */6 * * *` (UTC) on the dedicated Free test project. Corrected hosted installation to pass both `--linked` and the explicit project reference; the CLI requires that combination. The authenticated count-only verification passed before activation. The first bounded worker run succeeded: three expired text messages removed, zero photo/avatar/individual-deletion jobs removed, zero failures and an empty backlog afterward. Health reports enabled scheduling and a successful worker run; a future cron-triggered hosted dispatch has not yet been observed. No local Docker or Expo server was started.
+
+The content-capacity migration is also deployed. Aggregate verification reports two profiles, seven retained messages, one photo reservation and two avatar records, within the configured ceilings. These are deployment-time counts, not usage forecasts. CAPTCHA remains deferred and public abuse/egress controls remain incomplete.
+
+The Android internal preview was started from source `42edade` in [run 41238276121](https://github.com/asadabbas717/loopnest/actions/runs/41238276121). Compilation and installed-device acceptance are pending; no binary success is inferred from dispatch. The preceding quality workflow for that source passed in [run 41144323608](https://github.com/asadabbas717/loopnest/actions/runs/41144323608).
+
 ## Phase 30/31 preparation — installed preview and operations
 
 Prepared a manually started Android arm64 release-mode preview workflow with normal capture protection and public-only backend inputs. It uses the template development signing key and is not store-ready. No Android SDK/JDK is present locally; an iOS installed build needs macOS/Xcode/provisioning. No compiled/phone result is inferred from workflow configuration. Prepared [installed-build checks](INSTALLED_BUILD_TESTING.md), [incident/backup/moderation/rollback runbook](OPERATIONS.md) and [private reporting guidance](../SECURITY.md). Owner-approved contacts, signing, encrypted backup/restore drill, alert destination and independent review remain unresolved; phases 30/31/32 are not marked complete.
