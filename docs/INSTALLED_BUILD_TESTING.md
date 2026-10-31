@@ -1,5 +1,7 @@
 # Installed-build acceptance
 
+The first build attempt, [run 41238276121](https://github.com/asadabbas717/loopnest/actions/runs/41238276121), stopped at the security audit before native compilation. No APK is available from that run. Resolve the [current dependency findings](DEPENDENCIES.md) and rerun before performing the installed-device checklist.
+
 Expo Go testing is valuable but does not establish native launcher/splash, release-mode lifecycle or final manifest behavior. The repository has a manually started **Android internal preview** Actions workflow. It uses the pinned project dependencies, Java 21, generated native code and an arm64 release-mode APK with the template development signing key. It requires no EAS account, subscription or production signing secret. This is an internal test artifact, not a store-ready release.
 
 In GitHub → Actions → Android internal preview → Run workflow, choose the intended source ref and enter the HTTPS Supabase URL and public `sb_publishable_…` key. Inputs enter the build as environment values, never interpolated shell commands. Do not enter service keys, SMTP credentials or passwords. The public key is embedded in the app as expected; authorization depends on server rules. Normal capture protection is forced and screenshot-test mode is off. The workflow runs no Metro/Docker service on the owner's PC.

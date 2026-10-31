@@ -6,7 +6,7 @@ Installed the scheduler functions and enabled `17 */6 * * *` (UTC) on the dedica
 
 The content-capacity migration is also deployed. Aggregate verification reports two profiles, seven retained messages, one photo reservation and two avatar records, within the configured ceilings. These are deployment-time counts, not usage forecasts. CAPTCHA remains deferred and public abuse/egress controls remain incomplete.
 
-The Android internal preview was started from source `42edade` in [run 41238276121](https://github.com/asadabbas717/loopnest/actions/runs/41238276121). Compilation and installed-device acceptance are pending; no binary success is inferred from dispatch. The preceding quality workflow for that source passed in [run 41144323608](https://github.com/asadabbas717/loopnest/actions/runs/41144323608).
+The Android internal preview was started from source `42edade` in [run 41238276121](https://github.com/asadabbas717/loopnest/actions/runs/41238276121). Its clean installation/config validation passed, but the dependency audit stopped compilation: the current registry reports 25 moderate findings propagated from glob/minimatch. No APK was produced. The preceding quality workflow for that source passed in [run 41144323608](https://github.com/asadabbas717/loopnest/actions/runs/41144323608), before this registry result; it does not waive the new findings. See [dependency blocker](DEPENDENCIES.md). Installed-device acceptance remains pending.
 
 ## Phase 30/31 preparation — installed preview and operations
 
