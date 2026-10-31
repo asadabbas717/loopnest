@@ -4,6 +4,7 @@
 **/coverage/
 mobile/android/
 mobile/ios/
+build-artifacts/
 .env
 .env.*
 !.env.example

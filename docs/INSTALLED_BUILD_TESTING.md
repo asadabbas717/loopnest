@@ -1,6 +1,6 @@
 # Installed-build acceptance
 
-The first build attempt, [run 41238276121](https://github.com/asadabbas717/loopnest/actions/runs/41238276121), stopped at the security audit before native compilation. No APK is available from that run. The [dependency repair](DEPENDENCIES.md) passes clean local checks; a new native build is required before installed-device acceptance.
+The first build attempt, [run 41238276121](https://github.com/asadabbas717/loopnest/actions/runs/41238276121), stopped at the security audit before native compilation. The [dependency repair](DEPENDENCIES.md) now passes complete CI. [Build 41239899447](https://github.com/asadabbas717/loopnest/actions/runs/41239899447) succeeded from `49f3a5e`; [download its APK archive](https://github.com/asadabbas717/loopnest/actions/runs/41239899447/artifacts/13056874461). Extract `app-release.apk`. SHA-256: `f3d3cefa8c9ccfa562409ef091be57bc619d2d41417742b59c95256b6e61e779` (33,469,732 bytes). The GitHub artifact expires 8 November 2026 at 01:51 PKT. A verified local copy is in ignored `build-artifacts/Loopnest-0.1.0-preview-49f3a5e.apk` at the repository root. Installed-device acceptance remains pending.
 
 Expo Go testing is valuable but does not establish native launcher/splash, release-mode lifecycle or final manifest behavior. The repository has a manually started **Android internal preview** Actions workflow. It uses the pinned project dependencies, Java 21, generated native code and an arm64 release-mode APK with the template development signing key. It requires no EAS account, subscription or production signing secret. This is an internal test artifact, not a store-ready release.
 
@@ -16,4 +16,4 @@ After a successful run, download `loopnest-android-internal-preview` from its ar
 - [ ] Switching accounts, backgrounding, offline/reconnect and process restart do not expose another user's content or resume a cleared draft.
 - [ ] Large system text, screen readers, reduced motion and slower/lower-memory devices remain usable.
 
-An iOS installed build still needs macOS/Xcode and suitable owner-controlled provisioning. This Windows workspace has no Android SDK/JDK or macOS/Xcode installed. The workflow prepares Android compilation elsewhere; it does not prove a binary has built until a successful run is recorded, and an artifact is not physical-device acceptance. iOS and production signing remain separate gates. See [verification](VERIFICATION.md).
+An iOS installed build still needs macOS/Xcode and suitable owner-controlled provisioning. This Windows workspace has no Android SDK/JDK or macOS/Xcode installed. Android compilation succeeded on GitHub; an artifact is not physical-device acceptance. iOS and production signing remain separate gates. See [verification](VERIFICATION.md).
