@@ -1,5 +1,9 @@
 # Development status
 
+## Android installed-launch failure — 1 November 2026
+
+The owner reports that the first APK closes and Android says the app has a bug. Compilation/checksum success did not establish runtime acceptance; that APK is not accepted. Added an isolated release emulator probe: build arm64 plus x86_64, install on a fresh API 35 emulator, require the signed-out Email/Password/Sign-in UI and process survival on two cold launches, and publish an APK only after that gate passes. The probe refuses physical devices and non-Linux/non-CI execution, uses no user accounts, and bounds/redacts crash diagnostics. Root cause and replacement device acceptance are pending.
+
 ## APK blocker repair — 1 November 2026
 
 Updated glob to the patched 14.0.2 and modern matcher consumers to minimatch 11.0.1. Legacy lint consumers receive a documented export/test adapter backed by that same unmodified upstream matcher. A clean install reports zero advisories and a valid dependency tree; strict typing, lint, formatting and all 95 tests pass. Native/CI acceptance follows the new build. The Android workflow now also builds when its own file changes on main, using public test-project configuration; no privileged credential is included and normal capture protection remains enabled.
