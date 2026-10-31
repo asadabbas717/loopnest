@@ -123,6 +123,7 @@ export function Page({
     });
   }, [scrolling]);
   const [keyboard, setKeyboard] = useState(false);
+  const [dockHeight, setDockHeight] = useState(0);
   useEffect(() => {
     const show = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -177,127 +178,138 @@ export function Page({
             }}
           />
         </View>
-        <View style={styles.brandRow}>
-          {path !== '/' ? (
-            <IconButton
-              icon="arrow-left"
-              label="Go back"
-              onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-            />
-          ) : (
-            <Logo />
-          )}
-          <Text
-            style={{
-              fontFamily: fonts.semibold,
-              color: palette.ink,
-              fontSize: 23,
-              letterSpacing: -1,
-              flex: 1,
-            }}
-          >
-            loopnest<Text style={{ color: palette.accent }}>.</Text>
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Icon name="lock" size={11} color={palette.accent} />
+        {/* Absolute children must be anchored inside the padded safe area.
+            Positioning the dock directly on SafeAreaView ignores its padding. */}
+        <View testID="safe-page-content" collapsable={false} style={{ flex: 1 }}>
+          <View style={styles.brandRow}>
+            {path !== '/' ? (
+              <IconButton
+                icon="arrow-left"
+                label="Go back"
+                onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+              />
+            ) : (
+              <Logo />
+            )}
             <Text
               style={{
-                color: palette.muted,
-                fontFamily: fonts.mono,
-                fontSize: 9,
-                letterSpacing: 1,
+                fontFamily: fonts.semibold,
+                color: palette.ink,
+                fontSize: 23,
+                letterSpacing: -1,
+                flex: 1,
               }}
             >
-              INVITE ONLY
+              loopnest<Text style={{ color: palette.accent }}>.</Text>
             </Text>
-          </View>
-        </View>
-        <KeyboardAwareScrollView
-          ref={scroll}
-          onLayout={(event) => {
-            scrolling.viewport(event.nativeEvent.layout.height);
-            measure();
-          }}
-          onContentSizeChange={measure}
-          onScroll={(event) => {
-            scrolling.observe(event.nativeEvent.contentOffset.y);
-            notifyVisibility();
-          }}
-          onScrollBeginDrag={() => scrolling.beginGesture()}
-          onScrollEndDrag={(event) => {
-            scrolling.observe(event.nativeEvent.contentOffset.y);
-            scrolling.endGesture();
-            notifyVisibility();
-          }}
-          onMomentumScrollBegin={() => scrolling.beginGesture()}
-          onMomentumScrollEnd={(event) => {
-            scrolling.observe(event.nativeEvent.contentOffset.y);
-            scrolling.endGesture();
-            notifyVisibility();
-          }}
-          maintainVisibleContentPosition={
-            startAtEnd && scrollReady ? { minIndexForVisible: 0 } : undefined
-          }
-          mode={Platform.OS === 'ios' ? 'layout' : 'insets'}
-          automaticallyAdjustContentInsets={false}
-          automaticallyAdjustKeyboardInsets={false}
-          contentInsetAdjustmentBehavior="never"
-          disableScrollOnKeyboardHide={Platform.OS === 'ios'}
-          scrollEventThrottle={32}
-          style={{ flex: 1 }}
-          contentContainerStyle={[styles.body, dock && { paddingBottom: 115 }]}
-          bottomOffset={24}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-        >
-          {children}
-        </KeyboardAwareScrollView>
-        {dock && !keyboard && (
-          <View style={styles.dock}>
-            {(
-              [
-                { key: 'chats', icon: 'message-circle', label: 'Chats', href: '/' },
-                { key: 'friends', icon: 'users', label: 'Friends', href: '/friends' },
-                { key: 'account', icon: 'sliders', label: 'You', href: '/account' },
-              ] as const
-            ).map((item) => (
-              <Pressable
-                key={item.key}
-                accessibilityRole="button"
-                accessibilityLabel={item.label}
-                accessibilityState={{ selected: dock === item.key }}
-                onPress={() => {
-                  if (dock !== item.key) router.replace(item.href);
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon name="lock" size={11} color={palette.accent} />
+              <Text
+                style={{
+                  color: palette.muted,
+                  fontFamily: fonts.mono,
+                  fontSize: 9,
+                  letterSpacing: 1,
                 }}
-                style={({ pressed }) => ({
-                  flex: 1,
-                  minHeight: 52,
-                  borderRadius: 17,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 4,
-                  backgroundColor: dock === item.key ? '#26381E' : 'transparent',
-                  opacity: pressed ? 0.6 : 1,
-                })}
               >
-                <Icon
-                  name={item.icon}
-                  size={20}
-                  color={dock === item.key ? palette.accent : palette.muted}
-                />
-                <Text
-                  style={{
-                    fontFamily: fonts.medium,
-                    color: dock === item.key ? palette.accent : palette.muted,
-                    fontSize: 11,
-                  }}
-                >
-                  {item.label}
-                </Text>
-              </Pressable>
-            ))}
+                INVITE ONLY
+              </Text>
+            </View>
           </View>
-        )}
+          <KeyboardAwareScrollView
+            ref={scroll}
+            onLayout={(event) => {
+              scrolling.viewport(event.nativeEvent.layout.height);
+              measure();
+            }}
+            onContentSizeChange={measure}
+            onScroll={(event) => {
+              scrolling.observe(event.nativeEvent.contentOffset.y);
+              notifyVisibility();
+            }}
+            onScrollBeginDrag={() => scrolling.beginGesture()}
+            onScrollEndDrag={(event) => {
+              scrolling.observe(event.nativeEvent.contentOffset.y);
+              scrolling.endGesture();
+              notifyVisibility();
+            }}
+            onMomentumScrollBegin={() => scrolling.beginGesture()}
+            onMomentumScrollEnd={(event) => {
+              scrolling.observe(event.nativeEvent.contentOffset.y);
+              scrolling.endGesture();
+              notifyVisibility();
+            }}
+            maintainVisibleContentPosition={
+              startAtEnd && scrollReady ? { minIndexForVisible: 0 } : undefined
+            }
+            mode={Platform.OS === 'ios' ? 'layout' : 'insets'}
+            automaticallyAdjustContentInsets={false}
+            automaticallyAdjustKeyboardInsets={false}
+            contentInsetAdjustmentBehavior="never"
+            disableScrollOnKeyboardHide={Platform.OS === 'ios'}
+            scrollEventThrottle={32}
+            style={{ flex: 1 }}
+            contentContainerStyle={[
+              styles.body,
+              dock && { paddingBottom: Math.max(115, dockHeight + 18 + 24) },
+            ]}
+            bottomOffset={24}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+          >
+            {children}
+          </KeyboardAwareScrollView>
+          {dock && !keyboard && (
+            <View
+              testID="bottom-navigation"
+              style={styles.dock}
+              onLayout={(event) => setDockHeight(event.nativeEvent.layout.height)}
+            >
+              {(
+                [
+                  { key: 'chats', icon: 'message-circle', label: 'Chats', href: '/' },
+                  { key: 'friends', icon: 'users', label: 'Friends', href: '/friends' },
+                  { key: 'account', icon: 'sliders', label: 'You', href: '/account' },
+                ] as const
+              ).map((item) => (
+                <Pressable
+                  key={item.key}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.label}
+                  accessibilityState={{ selected: dock === item.key }}
+                  onPress={() => {
+                    if (dock !== item.key) router.replace(item.href);
+                  }}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    minHeight: 52,
+                    borderRadius: 17,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4,
+                    backgroundColor: dock === item.key ? '#26381E' : 'transparent',
+                    opacity: pressed ? 0.6 : 1,
+                  })}
+                >
+                  <Icon
+                    name={item.icon}
+                    size={20}
+                    color={dock === item.key ? palette.accent : palette.muted}
+                  />
+                  <Text
+                    style={{
+                      fontFamily: fonts.medium,
+                      color: dock === item.key ? palette.accent : palette.muted,
+                      fontSize: 11,
+                    }}
+                  >
+                    {item.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
       </SafeAreaView>
     </FocusedFieldScroll.Provider>
   );

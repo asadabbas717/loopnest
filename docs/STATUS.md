@@ -1,5 +1,13 @@
 # Development status
 
+## Android bottom navigation spacing — 1 November 2026
+
+The owner confirms the Expo APK opens and supplied a signed-in Home photo showing the dock behind Android's three-button navigation bar. The shared Page now places its interactive content and floating dock inside a flex container within SafeAreaView's padded content area. This anchors absolute positioning above the bottom/side system insets instead of ignoring the parent's safe-area padding. The fix applies to Chats, Friends and You and keeps the header/scroll area within the same safe bounds. Scroll content reserves at least the measured dock height plus its gap, so larger labels do not cover the last items. Reviewed shared Page use across chat, photo, reporting, moderation and account screens; other absolute shapes are noninteractive background decoration.
+
+Version 0.1.2/build 3 includes the layout correction and retains the startup permission fix and capture protection. Installed three-button/gesture-navigation, larger-text and keyboard visual acceptance remain pending. At the owner's request, submit the Expo build and provide its page without polling build progress; wait for their completion update. No local Expo server or Docker engine is needed.
+
+Strict typing, lint, formatting, all 96 local regression tests and documentation-link checks pass for this change. These checks do not establish physical safe-area geometry; retest the supplied-photo scenario on the installed replacement.
+
 ## Android installed-launch failure — 1 November 2026
 
 The owner reports that the first APK closes and Android says the app has a bug. Compilation/checksum success did not establish runtime acceptance; that APK is not accepted. Added an isolated release emulator probe: build arm64 plus x86_64, install on a fresh API 35 emulator, require the signed-out Email/Password/Sign-in UI and process survival on two cold launches, and publish an APK only after that gate passes. The probe refuses physical devices and non-Linux/non-CI execution, uses no user accounts, and bounds/redacts crash diagnostics. Root cause and replacement device acceptance are pending.

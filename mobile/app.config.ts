@@ -6,7 +6,7 @@ const config: ExpoConfig = {
   owner: 'asadabbasbusiness',
   extra: { eas: { projectId: '43623fa3-850e-4e8a-9413-92a6088354d2' } },
   scheme: 'loopnest',
-  version: '0.1.1',
+  version: '0.1.2',
   icon: './assets/brand/icon.png',
   userInterfaceStyle: 'dark',
   backgroundColor: '#080C11',
@@ -18,7 +18,7 @@ const config: ExpoConfig = {
     infoPlist: { NSAppTransportSecurity: { NSAllowsLocalNetworking: true } },
   },
   android: {
-    versionCode: 2,
+    versionCode: 3,
     package: 'app.loopnest.mobile',
     softwareKeyboardLayoutMode: 'resize',
     adaptiveIcon: {
