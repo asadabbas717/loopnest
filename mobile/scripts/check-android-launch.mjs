@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { checkAndroidSafeArea } from './android-safe-area.mjs';
 
 // This probe must never install, stop or inspect an app on the owner's phone.
 if (process.env.CI !== 'true' || process.platform !== 'linux')
@@ -29,6 +30,18 @@ try {
       throw new Error(`Unexpected broad permission in installed APK: ${name}`);
   for (let launch = 0; launch < 2; launch++) {
     run('shell', 'am', 'force-stop', pkg);
+    const navigationMode = launch === 0 ? 'threebutton' : 'gestural';
+    if (process.env.CHECK_SAFE_AREA === 'true') {
+      run(
+        'shell',
+        'cmd',
+        'overlay',
+        'enable-exclusive',
+        '--category',
+        `com.android.internal.systemui.navbar.${navigationMode}`,
+      );
+      await pause(1500);
+    }
     run('logcat', '-c');
     run('shell', 'am', 'start', '-W', '-n', `${pkg}/.MainActivity`);
     let ready = false;
@@ -45,6 +58,28 @@ try {
       run('shell', 'uiautomator', 'dump', '/sdcard/loopnest-launch.xml');
       const xml = run('shell', 'cat', '/sdcard/loopnest-launch.xml');
       if (/text="Email"/.test(xml) && /text="Password"/.test(xml) && /Sign in/.test(xml)) {
+        if (process.env.CHECK_SAFE_AREA === 'true') {
+          const displays = run('shell', 'dumpsys', 'window', 'displays');
+          try {
+            const geometry = checkAndroidSafeArea(xml, displays);
+            console.log(`Safe content geometry (${navigationMode}): ${JSON.stringify(geometry)}`);
+          } catch (issue) {
+            // Geometry/resource IDs only; never print UI field values.
+            console.error(
+              displays
+                .split('\n')
+                .filter((line) => line.includes('navigationBars'))
+                .slice(0, 5)
+                .map((line) => line.slice(0, 500))
+                .join('\n'),
+            );
+            console.error(
+              'Native view IDs:',
+              [...xml.matchAll(/resource-id="([^"]+)"/g)].map((match) => match[1]).slice(0, 60),
+            );
+            throw issue;
+          }
+        }
         ready = true;
         break;
       }

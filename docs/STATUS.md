@@ -3,9 +3,9 @@
 ## Current snapshot — repository sync, 1 November 2026
 
 - App configuration: **0.1.2 / Android build 3**, Expo 58.0.22, Router 58.0.29, React Native 0.88.1 and Screens 4.30.1.
-- Submitted APK source: `f5a651d`, [current Expo build 56efd37c](https://expo.dev/accounts/asadabbasbusiness/projects/loopnest/builds/56efd37c-0e1e-4517-afe9-98cf9bfea55e). The earlier 0.1.2 build was canceled. Completion and 0.1.2 installed-device geometry have not been rechecked; no new APK was built for this documentation sync.
+- Submitted APK source: `f5a651d`, [current Expo build 56efd37c](https://expo.dev/accounts/asadabbasbusiness/projects/loopnest/builds/56efd37c-0e1e-4517-afe9-98cf9bfea55e). The earlier 0.1.2 build was canceled. Expo completion is confirmed: Doctor 20/20 and native BUILD SUCCESSFUL. Exact-artifact emulator verification is in progress; owner-device geometry is pending.
 - [Source CI 41248588895](https://github.com/asadabbas717/loopnest/actions/runs/41248588895) passes. Local Doctor passes 20/20; all 96 tests, typing/lint/formatting, clean audit and Android/iOS exports pass. Backend integration passed in CI.
-- The owner confirms 0.1.1 opens on Android. Its dock overlaps the three-button bar; the shared-container/clearance fix is included in 0.1.2 and needs device acceptance. The pinned emulator artifact remains 0.1.1 until a newer binary is verified.
+- The owner confirms 0.1.1 opens on Android. Its dock overlaps the three-button bar; the shared-container/clearance fix is included in 0.1.2 and needs device acceptance. The fixture now pins the downloaded 0.1.2 candidate, verified against its Expo source and SHA-256; runtime checks are in progress.
 - Hosted cleanup is configured every six hours; its first bounded worker run passed. Future hosted cron execution and external alert delivery are not established by that initial run. Project content ceilings are deployed; CAPTCHA and broader Auth/request/egress protections remain incomplete.
 - Public-release gates include latest installed Android/iOS/privacy/accessibility acceptance, owner-controlled production signing, operational contacts/alerting/backup restore, remaining abuse protection and independent review. Voice notes remain omitted.
 
