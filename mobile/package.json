@@ -72,7 +72,7 @@
     "jpeg-js": "0.4.4",
     "prettier": "^3.9.9",
     "supabase": "2.121.0",
-    "typescript": "~6.0.3",
+    "typescript": "~7.0.2",
     "minimatch": "file:vendor/minimatch-legacy"
   },
   "overrides": {
