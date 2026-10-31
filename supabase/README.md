@@ -30,6 +30,7 @@ For an existing project, update account erasure before enabling new profile uplo
 5. Configure an SMTP provider within its free allowance for test addresses you own. Supabase's default provider is restricted; this project's hosted setup refused custom code templates until custom SMTP was configured. The owner's Brevo configuration is external to this repo. Never commit SMTP credentials or disable email confirmation to bypass delivery setup.
 6. For a fresh clone, copy `mobile/.env.example` to `mobile/.env`, enter the HTTPS project URL and public **`sb_publishable_…`** key, and leave `EXPO_PUBLIC_USE_LOCAL_BACKEND=false`. Hosted legacy anon JWTs and secret/service-role keys are rejected by client configuration. Restart Metro after changes. No privileged key belongs in `EXPO_PUBLIC_*`.
 7. Run app checks and the device checklist. Test with accounts/content you control. Per-account quotas do not replace aggregate signup/request/egress controls before public release.
+8. Configure [bounded scheduled cleanup and health checks](../docs/AUTOMATED_MAINTENANCE.md) after applying migrations/deploying the worker. Portable migrations alone do not install scheduler extensions or enable the job. Keep its dedicated token only in server secrets/Vault; never in mobile configuration. The owner's test project is already configured, as recorded in Status; fresh forks need their own operator setup. [Project content ceilings](../docs/PROJECT_CAPACITY.md) do not replace the remaining Auth/request/egress abuse controls.
 
 ## Optional local backend
 

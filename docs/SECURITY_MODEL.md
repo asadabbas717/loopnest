@@ -29,4 +29,4 @@ An external camera, modified client/device, saved copy or content already delive
 
 ## Release work
 
-See [verification gates](VERIFICATION.md): current two-phone/signed-build/iOS/accessibility acceptance, aggregate abuse and Free quota controls, monitored physical cleanup, dependency/fork maintenance, moderator/support/appeal procedures, backup/recovery policy and an independent security review. Open-source availability and passing tests do not establish a security certification.
+See [verification gates](VERIFICATION.md): current two-phone/signed-build/iOS/accessibility acceptance, remaining aggregate Auth/request/egress abuse controls, scheduled-cleanup health and external alerting, dependency/fork maintenance, moderator/support/appeal procedures, backup/recovery policy and an independent security review. Open-source availability and passing tests do not establish a security certification.

@@ -23,6 +23,8 @@ The mobile app contains no service-role key, advertising or analytics SDK. Media
 
 ## Start on your phone
 
+For an installed Android app, see the [current Expo preview](docs/EXPO_PREVIEW.md) and [installed-build checks](docs/INSTALLED_BUILD_TESTING.md). Version 0.1.2/build 3 contains the safe-area fix and SDK patch alignment. Its submitted build is awaiting completion/device acceptance; the earlier 0.1.1 launches but has the reported dock overlap. The 0.1.0 startup-crashing APK is superseded. Internal previews use a public development signing key, not production signing.
+
 Use Node 24 (the CI version), npm and Expo Go compatible with SDK 58. Hosted testing requires an isolated Supabase Free project; Docker is needed only for the optional local backend.
 
 For a fresh clone:
@@ -62,15 +64,15 @@ npx expo install --check
 npx expo-doctor
 ```
 
-`check` runs strict typing, lint and unit/embedded-Postgres tests. Linux CI additionally runs isolated Supabase integration tests and Android/iOS Hermes exports. Exports are JavaScript bundles; signed APK/IPA acceptance remains a separate gate. See [verification](docs/VERIFICATION.md).
+`check` runs strict typing, lint and unit/embedded-Postgres tests. Linux CI additionally runs Expo Doctor, isolated Supabase integration tests and Android/iOS Hermes exports. Exports are JavaScript bundles; installed APK/IPA acceptance remains a separate gate. See [verification](docs/VERIFICATION.md).
 
-Operator content maintenance is **manual** and defaults to a read-only count preview:
+The dedicated test project has bounded automatic cleanup configured every six hours. Fresh projects must install/configure the scheduler separately; migrations alone do not enable it. See [automatic cleanup and health monitoring](docs/AUTOMATED_MAINTENANCE.md). Explicit operator maintenance remains available and defaults to a read-only count preview:
 
 ```bash
 npm run maintenance:content -- --project-ref YOUR_20_LETTER_PROJECT_REF
 ```
 
-The explicit `--apply` flag removes eligible media and expired text. Review [maintenance and retention](docs/PHOTO_MAINTENANCE.md) before applying. Access to expired messages is denied by the database even when physical cleanup has not run. No automatic scheduler is installed.
+The explicit `--apply` flag removes eligible media and expired text. Review [maintenance and retention](docs/PHOTO_MAINTENANCE.md) before applying. Access to expired messages is denied by the database even when physical cleanup has not run. Scheduling does not guarantee exact physical deletion times: failures, paused projects and quotas can delay cleanup. External alert delivery is not configured.
 
 For optional local Supabase development, see [backend setup](supabase/README.md). Native Android/iOS builds use `npm run android` / `npm run ios` and require the corresponding native toolchain. Web sign-in/persistence is intentionally disabled.
 
@@ -82,9 +84,11 @@ For optional local Supabase development, see [backend setup](supabase/README.md)
 | Privacy and access boundaries | [Security model](docs/SECURITY_MODEL.md), [ephemeral messages/photos](docs/EPHEMERAL_PRIVACY.md) |
 | Profile pictures and shared clearing | [Private avatars and Clear Chat](docs/PRIVATE_AVATARS_AND_CLEAR_CHAT.md) |
 | Data lifecycle | [Maintenance](docs/PHOTO_MAINTENANCE.md), [account erasure](docs/ACCOUNT_ERASURE.md) |
+| Installed Android previews | [Expo EAS](docs/EXPO_PREVIEW.md), [device acceptance](docs/INSTALLED_BUILD_TESTING.md) |
+| Scheduled cleanup and project limits | [Automatic maintenance](docs/AUTOMATED_MAINTENANCE.md), [capacity safeguards](docs/PROJECT_CAPACITY.md) |
 | Abuse handling and reconnects | [Moderation](docs/MODERATION.md), [connection reliability](docs/CONNECTION_RELIABILITY.md) |
 | Dependencies and cost | [Dependency fixes](docs/DEPENDENCY_SECURITY_FIXES.md), [Free tier](docs/FREE_TIER.md) |
 
 ## Contribute and report security issues
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Use synthetic accounts and content in a dedicated test project. Never commit real `.env` files, credentials, session tokens, private images or database passwords. Open-source availability and passing tests do not establish an independent security certification. Broader abuse controls, monitored cleanup, signed-build/iOS acceptance and an independent review remain public-release work.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Use synthetic accounts and content in a dedicated test project. Never commit real `.env` files, credentials, session tokens, private images or database passwords. Open-source availability and passing tests do not establish an independent security certification. Broader abuse controls, external operational alerting, production signing, installed-build/iOS acceptance and an independent review remain public-release work.

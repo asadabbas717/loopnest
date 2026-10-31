@@ -13,6 +13,12 @@ build-artifacts/
 *.key
 *.keystore
 *.jks
+*.p12
+*.mobileprovision
+**/credentials.json
+*.apk
+*.aab
+*.ipa
 google-services.json
 GoogleService-Info.plist
 supabase/.temp/
